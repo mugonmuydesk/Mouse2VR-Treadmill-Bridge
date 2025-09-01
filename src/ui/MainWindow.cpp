@@ -257,14 +257,38 @@ void MainWindow::ToggleVisibility() {
 int MainWindow::Run() {
     // Show() is now called from main_gui.cpp before starting the thread
     
+    // Debug logging
+    FILE* debugLog = nullptr;
+    fopen_s(&debugLog, "C:\\Tools\\mouse2vr_debug.log", "a");
+    if (debugLog) {
+        fprintf(debugLog, "DEBUG: MainWindow::Run() - Entering message loop\n");
+        fflush(debugLog);
+    }
+    
     MSG msg;
+    int messageCount = 0;
     while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
         
+        messageCount++;
+        if (debugLog && messageCount % 100 == 0) {
+            fprintf(debugLog, "DEBUG: Processed %d messages, still running...\n", messageCount);
+            fflush(debugLog);
+        }
+        
         if (m_shouldExit) {
+            if (debugLog) {
+                fprintf(debugLog, "DEBUG: m_shouldExit set, breaking message loop\n");
+                fflush(debugLog);
+            }
             break;
         }
+    }
+    
+    if (debugLog) {
+        fprintf(debugLog, "DEBUG: Message loop ended, processed %d messages total\n", messageCount);
+        fclose(debugLog);
     }
     
     return static_cast<int>(msg.wParam);

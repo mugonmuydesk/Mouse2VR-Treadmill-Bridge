@@ -94,99 +94,124 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
 }
 
 int RunApplication(HINSTANCE hInstance) {
-    // Allocate console for debug output
-    AllocConsole();
-    FILE* pCout;
-    freopen_s(&pCout, "CONOUT$", "w", stdout);
-    freopen_s(&pCout, "CONOUT$", "w", stderr);
+    // Open debug log file
+    FILE* debugLog = nullptr;
+    fopen_s(&debugLog, "C:\\Tools\\mouse2vr_debug.log", "w");
+    if (!debugLog) {
+        MessageBox(nullptr, "Failed to create debug log", "Error", MB_OK | MB_ICONERROR);
+        return 1;
+    }
     
-    printf("DEBUG: Starting Mouse2VR GUI initialization...\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: Starting Mouse2VR GUI initialization...\n");
+    fflush(debugLog);
     
     // Load configuration
     Mouse2VR::ConfigManager configManager("config.json");
     if (!configManager.Load()) {
-        printf("DEBUG: Created default configuration file\n");
-        fflush(stdout);
+        fprintf(debugLog, "DEBUG: Created default configuration file\n");
+        fflush(debugLog);
     }
     
-    printf("DEBUG: Creating window...\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: Creating window...\n");
+    fflush(debugLog);
     
     // Create and initialize window FIRST - before any other components
     Mouse2VR::MainWindow window;
     if (!window.Initialize(hInstance)) {
         DWORD error = GetLastError();
-        printf("ERROR: Failed to create window. Error code: %lu\n", error);
-        fflush(stdout);
+        fprintf(debugLog, "ERROR: Failed to create window. Error code: %lu\n", error);
+        fflush(debugLog);
+        fclose(debugLog);
         return 1;
     }
     
-    printf("DEBUG: Window created, showing window...\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: Window created, showing window...\n");
+    fflush(debugLog);
     
     // Show window immediately so user sees something
     window.Show();
-    printf("DEBUG: Window shown, initializing components...\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: Window shown, initializing components...\n");
+    fflush(debugLog);
     
     // Initialize components
     Mouse2VR::RawInputHandler inputHandler;
     Mouse2VR::ViGEmController controller;
     Mouse2VR::InputProcessor processor;
     
-    printf("DEBUG: Initializing Raw Input...\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: Initializing Raw Input...\n");
+    fflush(debugLog);
     
     // Initialize Raw Input
     if (!inputHandler.Initialize()) {
-        printf("ERROR: Failed to initialize Raw Input\n");
-        fflush(stdout);
+        fprintf(debugLog, "ERROR: Failed to initialize Raw Input\n");
+        fflush(debugLog);
+        fclose(debugLog);
         MessageBox(nullptr, "Failed to initialize Raw Input", "Error", MB_OK | MB_ICONERROR);
         return 1;
     }
     
-    printf("DEBUG: Raw Input initialized, initializing ViGEm...\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: Raw Input initialized, initializing ViGEm...\n");
+    fflush(debugLog);
     
-    // Initialize ViGEm controller - THIS MIGHT BE HANGING
+    // Initialize ViGEm controller
     if (!controller.Initialize()) {
-        printf("ERROR: Failed to initialize ViGEm controller\n");
-        fflush(stdout);
+        fprintf(debugLog, "ERROR: Failed to initialize ViGEm controller\n");
+        fflush(debugLog);
+        fclose(debugLog);
         MessageBox(nullptr, 
                   "Failed to initialize virtual controller.\nMake sure ViGEmBus is installed.",
                   "Error", MB_OK | MB_ICONERROR);
         return 1;
     }
     
-    printf("DEBUG: ViGEm initialized successfully!\n");
-    fflush(stdout);
+    fprintf(debugLog, "DEBUG: ViGEm initialized successfully!\n");
+    fflush(debugLog);
     
     // Configure processor
+    fprintf(debugLog, "DEBUG: Configuring processor...\n");
+    fflush(debugLog);
     processor.SetConfig(configManager.GetConfig().toProcessingConfig());
     
     // Set components
+    fprintf(debugLog, "DEBUG: Setting window components...\n");
+    fflush(debugLog);
     window.SetComponents(&inputHandler, &controller, &processor, &configManager);
     
     // NOW start processing thread after everything is initialized
+    fprintf(debugLog, "DEBUG: Starting processing thread...\n");
+    fflush(debugLog);
     std::thread processingThread(ProcessingThread, &window, &inputHandler, 
                                 &controller, &processor, &configManager);
     
     // Run message loop
+    fprintf(debugLog, "DEBUG: Entering window message loop (Run())...\n");
+    fflush(debugLog);
     int result = window.Run();
+    
+    fprintf(debugLog, "DEBUG: Window.Run() returned with result: %d\n", result);
+    fflush(debugLog);
     
     // Cleanup
     g_running = false;
     
     if (processingThread.joinable()) {
+        fprintf(debugLog, "DEBUG: Waiting for processing thread to finish...\n");
+        fflush(debugLog);
         processingThread.join();
     }
     
     // Save configuration
+    fprintf(debugLog, "DEBUG: Saving configuration...\n");
+    fflush(debugLog);
     configManager.Save();
     
+    fprintf(debugLog, "DEBUG: Shutting down components...\n");
+    fflush(debugLog);
     controller.Shutdown();
     inputHandler.Shutdown();
+    
+    fprintf(debugLog, "DEBUG: Application exit complete\n");
+    fclose(debugLog);
     
     return result;
 }

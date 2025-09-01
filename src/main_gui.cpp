@@ -94,51 +94,73 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
 }
 
 int RunApplication(HINSTANCE hInstance) {
-    // Show debug message
-    MessageBox(nullptr, "Starting Mouse2VR GUI initialization...", "Debug", MB_OK);
+    // Allocate console for debug output
+    AllocConsole();
+    FILE* pCout;
+    freopen_s(&pCout, "CONOUT$", "w", stdout);
+    freopen_s(&pCout, "CONOUT$", "w", stderr);
+    
+    printf("DEBUG: Starting Mouse2VR GUI initialization...\n");
+    fflush(stdout);
     
     // Load configuration
     Mouse2VR::ConfigManager configManager("config.json");
     if (!configManager.Load()) {
-        MessageBox(nullptr, "Created default configuration file", "Mouse2VR", MB_OK | MB_ICONINFORMATION);
+        printf("DEBUG: Created default configuration file\n");
+        fflush(stdout);
     }
+    
+    printf("DEBUG: Creating window...\n");
+    fflush(stdout);
     
     // Create and initialize window FIRST - before any other components
     Mouse2VR::MainWindow window;
     if (!window.Initialize(hInstance)) {
         DWORD error = GetLastError();
-        char msg[256];
-        sprintf_s(msg, "Failed to create window. Error code: %lu", error);
-        MessageBox(nullptr, msg, "Window Creation Error", MB_OK | MB_ICONERROR);
+        printf("ERROR: Failed to create window. Error code: %lu\n", error);
+        fflush(stdout);
         return 1;
     }
     
+    printf("DEBUG: Window created, showing window...\n");
+    fflush(stdout);
+    
     // Show window immediately so user sees something
     window.Show();
-    MessageBox(nullptr, "Window shown, initializing components...", "Debug", MB_OK);
+    printf("DEBUG: Window shown, initializing components...\n");
+    fflush(stdout);
     
     // Initialize components
     Mouse2VR::RawInputHandler inputHandler;
     Mouse2VR::ViGEmController controller;
     Mouse2VR::InputProcessor processor;
     
+    printf("DEBUG: Initializing Raw Input...\n");
+    fflush(stdout);
+    
     // Initialize Raw Input
     if (!inputHandler.Initialize()) {
+        printf("ERROR: Failed to initialize Raw Input\n");
+        fflush(stdout);
         MessageBox(nullptr, "Failed to initialize Raw Input", "Error", MB_OK | MB_ICONERROR);
         return 1;
     }
     
-    MessageBox(nullptr, "Raw Input initialized, initializing ViGEm...", "Debug", MB_OK);
+    printf("DEBUG: Raw Input initialized, initializing ViGEm...\n");
+    fflush(stdout);
     
     // Initialize ViGEm controller - THIS MIGHT BE HANGING
     if (!controller.Initialize()) {
+        printf("ERROR: Failed to initialize ViGEm controller\n");
+        fflush(stdout);
         MessageBox(nullptr, 
                   "Failed to initialize virtual controller.\nMake sure ViGEmBus is installed.",
                   "Error", MB_OK | MB_ICONERROR);
         return 1;
     }
     
-    MessageBox(nullptr, "ViGEm initialized successfully!", "Debug", MB_OK);
+    printf("DEBUG: ViGEm initialized successfully!\n");
+    fflush(stdout);
     
     // Configure processor
     processor.SetConfig(configManager.GetConfig().toProcessingConfig());

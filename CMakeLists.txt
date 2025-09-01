@@ -65,7 +65,7 @@ endforeach()
 # Link libraries for console version
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Threads::Threads
-    ViGEmClientShared
+    ViGEmClient
     setupapi
     winmm
     version
@@ -76,7 +76,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 # Link libraries for GUI version
 target_link_libraries(${PROJECT_NAME}_GUI PRIVATE
     Threads::Threads
-    ViGEmClientShared
+    ViGEmClient
     setupapi
     winmm
     version
@@ -107,17 +107,11 @@ if(WIN32)
     )
 endif()
 
-# Copy ViGEmClient DLL to output directory for both executables
+# Copy ViGEmClient DLL to output directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:ViGEmClientShared>
+        $<TARGET_FILE:ViGEmClient>
         $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
-
-add_custom_command(TARGET ${PROJECT_NAME}_GUI POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:ViGEmClientShared>
-        $<TARGET_FILE_DIR:${PROJECT_NAME}_GUI>
 )
 
 # Install rules

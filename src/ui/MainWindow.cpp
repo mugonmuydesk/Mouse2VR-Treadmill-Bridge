@@ -95,6 +95,9 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
 }
 
 void MainWindow::CreateControls() {
+    // TEMPORARY: Skip ALL controls to test if window works without them
+    return;
+    
     // Title label
     CreateWindow("STATIC", "Mouse2VR Treadmill Bridge",
         WS_CHILD | WS_VISIBLE | SS_CENTER,

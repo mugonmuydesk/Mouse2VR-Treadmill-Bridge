@@ -113,11 +113,13 @@ if(BUILD_WINUI)
 endif()
 
 # Install rules
-install(TARGETS Mouse2VR
-    RUNTIME DESTINATION bin
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-)
+if(BUILD_CONSOLE)
+    install(TARGETS Mouse2VR
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+    )
+endif()
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/config.json 
     DESTINATION bin 

@@ -33,7 +33,7 @@ jobs:
     
     - name: Build Core Library
       run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_CONSOLE=OFF -DBUILD_WIN32_GUI=OFF
+        cmake -B build -DCMAKE_BUILD_TYPE=Release -DBUILD_CONSOLE=ON -DBUILD_WIN32_GUI=OFF
         cmake --build build --config Release --target Mouse2VRCore
     
     - name: Build WinUI Application

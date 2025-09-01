@@ -1,4 +1,4 @@
-#include "output/ViGEmController.h"
+#include "core/ViGEmController.h"
 #include <iostream>
 #include <algorithm>
 

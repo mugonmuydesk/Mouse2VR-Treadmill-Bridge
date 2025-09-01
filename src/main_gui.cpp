@@ -6,10 +6,10 @@
 #include <exception>
 
 #include "ui/MainWindow.h"
-#include "input/RawInputHandler.h"
-#include "output/ViGEmController.h"
-#include "processing/InputProcessor.h"
-#include "config/ConfigManager.h"
+#include "core/RawInputHandler.h"
+#include "core/ViGEmController.h"
+#include "core/InputProcessor.h"
+#include "core/ConfigManager.h"
 
 std::atomic<bool> g_running{true};
 

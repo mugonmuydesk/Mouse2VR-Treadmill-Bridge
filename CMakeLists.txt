@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
-project(Mouse2VR VERSION 1.0.0 LANGUAGES CXX)
+project(Mouse2VR VERSION 2.3.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Platform check
@@ -14,110 +14,112 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
+# Options
+option(BUILD_CONSOLE "Build console application" ON)
+option(BUILD_WIN32_GUI "Build Win32 GUI application" ON)
+option(BUILD_WINUI "Build WinUI 3 GUI application" OFF)
+
 # Add subdirectories
 add_subdirectory(external)
 
 # Find packages
 find_package(Threads REQUIRED)
 
-# Collect source files
-file(GLOB_RECURSE SOURCES_COMMON
-    src/input/*.cpp
-    src/output/*.cpp
-    src/processing/*.cpp
-    src/config/*.cpp
+# Core library
+add_library(Mouse2VRCore STATIC
+    src/core/RawInputHandler.cpp
+    src/core/ViGEmController.cpp
+    src/core/InputProcessor.cpp
+    src/core/ConfigManager.cpp
 )
 
-file(GLOB_RECURSE SOURCES_GUI
-    src/ui/*.cpp
+target_include_directories(Mouse2VRCore PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/ViGEmClient/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/json/single_include
 )
 
-file(GLOB_RECURSE HEADERS
-    include/*.h
-    include/*.hpp
+target_link_libraries(Mouse2VRCore PUBLIC
+    ViGEmClient
+    Threads::Threads
+    setupapi
+    winmm
 )
 
-# Console version
-add_executable(${PROJECT_NAME} 
-    src/main.cpp
-    ${SOURCES_COMMON}
-    ${HEADERS}
+target_compile_definitions(Mouse2VRCore PUBLIC
+    WIN32_LEAN_AND_MEAN
+    NOMINMAX
+    _CRT_SECURE_NO_WARNINGS
 )
 
-# GUI version
-add_executable(${PROJECT_NAME}_GUI
-    WIN32  # Windows subsystem
-    src/main_gui.cpp
-    ${SOURCES_COMMON}
-    ${SOURCES_GUI}
-    ${HEADERS}
-    src/Mouse2VR_GUI.manifest
-)
+# Console application
+if(BUILD_CONSOLE)
+    add_executable(Mouse2VR src/console/main.cpp)
+    
+    target_link_libraries(Mouse2VR PRIVATE
+        Mouse2VRCore
+    )
+    
+    target_compile_definitions(Mouse2VR PRIVATE
+        _CONSOLE
+    )
+    
+    # Copy ViGEmClient DLL to output directory
+    add_custom_command(TARGET Mouse2VR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:ViGEmClient>
+            $<TARGET_FILE_DIR:Mouse2VR>
+    )
+endif()
 
-# Include directories for both versions
-foreach(target ${PROJECT_NAME} ${PROJECT_NAME}_GUI)
-    target_include_directories(${target} PRIVATE
+# Win32 GUI application (legacy - to be replaced by WinUI)
+if(BUILD_WIN32_GUI)
+    add_executable(Mouse2VR_GUI WIN32
+        src/main_gui.cpp
+        src/ui/MainWindow.cpp
+        src/Mouse2VR_GUI.manifest
+    )
+    
+    target_include_directories(Mouse2VR_GUI PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/ViGEmClient/include
         ${CMAKE_CURRENT_SOURCE_DIR}/external/json/single_include
     )
-endforeach()
-
-# Link libraries for console version
-target_link_libraries(${PROJECT_NAME} PRIVATE
-    Threads::Threads
-    ViGEmClient
-    setupapi
-    winmm
-    version
-    imm32
-    Xinput
-)
-
-# Link libraries for GUI version
-target_link_libraries(${PROJECT_NAME}_GUI PRIVATE
-    Threads::Threads
-    ViGEmClient
-    setupapi
-    winmm
-    version
-    imm32
-    Xinput
-    comctl32
-    shell32
-    user32
-    gdi32
-)
-
-# Windows specific settings
-if(WIN32)
-    foreach(target ${PROJECT_NAME} ${PROJECT_NAME}_GUI)
-        target_compile_definitions(${target} PRIVATE
-            WIN32_LEAN_AND_MEAN
-            NOMINMAX
-            _CRT_SECURE_NO_WARNINGS
-        )
-    endforeach()
     
-    # Set Windows subsystem
-    set_target_properties(${PROJECT_NAME} PROPERTIES
-        WIN32_EXECUTABLE FALSE  # Console app
+    target_link_libraries(Mouse2VR_GUI PRIVATE
+        Mouse2VRCore
+        comctl32
+        shell32
+        user32
+        gdi32
     )
-    set_target_properties(${PROJECT_NAME}_GUI PROPERTIES
-        WIN32_EXECUTABLE TRUE   # GUI app (no console)
+    
+    target_compile_definitions(Mouse2VR_GUI PRIVATE
+        _WINDOWS
+    )
+    
+    # Copy ViGEmClient DLL to output directory
+    add_custom_command(TARGET Mouse2VR_GUI POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:ViGEmClient>
+            $<TARGET_FILE_DIR:Mouse2VR_GUI>
     )
 endif()
 
-# Copy ViGEmClient DLL to output directory
-add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:ViGEmClient>
-        $<TARGET_FILE_DIR:${PROJECT_NAME}>
-)
+# WinUI 3 application (new - Phase 2)
+if(BUILD_WINUI)
+    message(STATUS "WinUI 3 support will be added in Phase 2")
+    # add_subdirectory(src/winui)
+endif()
 
 # Install rules
-install(TARGETS ${PROJECT_NAME} DESTINATION bin)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/config/default_config.json 
-        DESTINATION bin 
-        RENAME m2j_config.json
-        OPTIONAL)
+install(TARGETS Mouse2VR
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/config.json 
+    DESTINATION bin 
+    OPTIONAL
+)

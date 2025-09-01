@@ -3,6 +3,7 @@
 #include <chrono>
 #include <atomic>
 #include <cstdio>
+#include <exception>
 
 #include "ui/MainWindow.h"
 #include "input/RawInputHandler.h"
@@ -18,7 +19,7 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
                      Mouse2VR::InputProcessor* processor,
                      Mouse2VR::ConfigManager* configManager) {
     
-    const auto& config = configManager->GetConfig();
+    const auto config = configManager->GetConfig();  // Get copy, not reference
     
     // Main loop timing
     auto lastUpdate = std::chrono::steady_clock::now();
@@ -40,7 +41,7 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
         auto elapsed = std::chrono::duration<float>(now - lastUpdate).count();
         
         // Reload config for dynamic updates
-        const auto& currentConfig = configManager->GetConfig();
+        const auto currentConfig = configManager->GetConfig();
         updateInterval = std::chrono::milliseconds(currentConfig.updateIntervalMs);
         
         // Sleep for interval
@@ -92,7 +93,7 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
     }
 }
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+int RunApplication(HINSTANCE hInstance) {
     // Load configuration
     Mouse2VR::ConfigManager configManager("config.json");
     if (!configManager.Load()) {
@@ -134,7 +135,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Set components
     window.SetComponents(&inputHandler, &controller, &processor, &configManager);
     
-    // Start processing thread
+    // Show window first
+    window.Show();
+    
+    // NOW start processing thread after everything is initialized
     std::thread processingThread(ProcessingThread, &window, &inputHandler, 
                                 &controller, &processor, &configManager);
     
@@ -155,4 +159,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     inputHandler.Shutdown();
     
     return result;
+}
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    try {
+        return RunApplication(hInstance);
+    } catch (const std::exception& ex) {
+        char msg[512];
+        sprintf_s(msg, "Unhandled exception: %s", ex.what());
+        MessageBox(nullptr, msg, "Fatal Error", MB_OK | MB_ICONERROR);
+        return 1;
+    } catch (...) {
+        MessageBox(nullptr, "Unknown fatal error occurred", "Fatal Error", MB_OK | MB_ICONERROR);
+        return 1;
+    }
 }

@@ -237,7 +237,7 @@ void MainWindow::ToggleVisibility() {
 }
 
 int MainWindow::Run() {
-    Show();
+    // Show() is now called from main_gui.cpp before starting the thread
     
     MSG msg;
     while (GetMessage(&msg, nullptr, 0, 0)) {

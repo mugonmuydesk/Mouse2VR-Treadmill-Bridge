@@ -1,3 +1,6 @@
 [submodule "external/ViGEmClient"]
 	path = external/ViGEmClient
 	url = https://github.com/ViGEm/ViGEmClient.git
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git

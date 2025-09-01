@@ -29,6 +29,7 @@ private:
     PVIGEM_CLIENT m_client = nullptr;
     PVIGEM_TARGET m_pad = nullptr;
     XUSB_REPORT m_report = {};
+    XUSB_REPORT m_lastReport = {};  // Track last sent state
     bool m_connected = false;
     
     // Convert float (-1.0 to 1.0) to SHORT (-32768 to 32767)

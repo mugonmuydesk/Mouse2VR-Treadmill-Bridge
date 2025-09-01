@@ -22,7 +22,7 @@ public:
     InputProcessor();
     
     // Process raw mouse delta and return stick position
-    void ProcessDelta(const MouseDelta& delta, float& outX, float& outY);
+    void ProcessDelta(const MouseDelta& delta, float deltaTime, float& outX, float& outY);
     
     // Update configuration
     void SetConfig(const ProcessingConfig& config);

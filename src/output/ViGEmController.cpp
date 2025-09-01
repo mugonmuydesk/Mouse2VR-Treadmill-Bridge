@@ -100,7 +100,11 @@ void ViGEmController::Update() {
         return;
     }
     
-    vigem_target_x360_update(m_client, m_pad, m_report);
+    // Only send update if state has changed
+    if (memcmp(&m_report, &m_lastReport, sizeof(XUSB_REPORT)) != 0) {
+        vigem_target_x360_update(m_client, m_pad, m_report);
+        m_lastReport = m_report;
+    }
 }
 
 SHORT ViGEmController::FloatToStick(float value) {

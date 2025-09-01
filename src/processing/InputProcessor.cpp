@@ -8,7 +8,7 @@ InputProcessor::InputProcessor() {
     // Default config is already set via member initialization
 }
 
-void InputProcessor::ProcessDelta(const MouseDelta& delta, float& outX, float& outY) {
+void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, float& outX, float& outY) {
     // Apply sensitivity
     float x = delta.x * m_config.sensitivity / 1000.0f;  // Normalize to reasonable range
     float y = delta.y * m_config.sensitivity / 1000.0f;
@@ -38,9 +38,9 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float& outX, float& o
     m_lastStickY = y;
     
     // Calculate speed (assuming Y is forward/back for treadmill)
-    if (m_config.countsPerMeter > 0) {
-        // Convert counts to meters, then to m/s (assuming 60 Hz update)
-        m_currentSpeed = std::abs(delta.y) / m_config.countsPerMeter * 60.0f;
+    if (m_config.countsPerMeter > 0 && deltaTime > 0) {
+        // Convert counts to meters, then to m/s using actual delta time
+        m_currentSpeed = std::abs(delta.y) / m_config.countsPerMeter / deltaTime;
     }
     
     // Handle calibration
@@ -70,11 +70,8 @@ void InputProcessor::EndCalibration(float distanceMeters) {
         return;
     }
     
-    // Calculate counts per meter based on accumulated deltas
-    float totalCounts = std::sqrt(
-        static_cast<float>(m_calibrationDeltas.x * m_calibrationDeltas.x + 
-                          m_calibrationDeltas.y * m_calibrationDeltas.y)
-    );
+    // For treadmill, use only Y-axis (forward/back movement)
+    float totalCounts = std::abs(static_cast<float>(m_calibrationDeltas.y));
     
     if (totalCounts > 0) {
         m_config.countsPerMeter = totalCounts / distanceMeters;

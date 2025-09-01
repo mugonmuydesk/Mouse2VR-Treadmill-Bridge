@@ -239,6 +239,7 @@ void MainWindow::UpdateStatus(const MouseDelta& delta, float speed, float stickP
     
     // Update current values
     m_currentSpeed = speed;
+    m_currentStickX = 0.0f;  // Always 0 for treadmill (Y-axis only)
     m_currentStickY = stickPercent / 100.0f;  // Convert to 0-1 range
     m_currentUpdateRate = updateRate;
     
@@ -465,7 +466,7 @@ void MainWindow::SetComponents(RawInputHandler* input, ViGEmController* controll
 void MainWindow::LoadSettings() {
     if (!m_configManager) return;
     
-    const auto& config = m_configManager->GetConfig();
+    const auto config = m_configManager->GetConfig();  // Thread-safe copy
     
     // Set sensitivity slider
     SendMessage(m_sensitivitySlider, TBM_SETPOS, TRUE, static_cast<LPARAM>(config.sensitivity * 100));
@@ -487,7 +488,7 @@ void MainWindow::LoadSettings() {
 void MainWindow::ApplySettings() {
     if (!m_configManager || !m_processor) return;
     
-    auto& config = m_configManager->GetConfig();
+    auto config = m_configManager->GetConfig();  // Thread-safe copy
     
     // Get sensitivity
     int pos = SendMessage(m_sensitivitySlider, TBM_GETPOS, 0, 0);
@@ -510,7 +511,8 @@ void MainWindow::ApplySettings() {
     // Apply to processor
     m_processor->SetConfig(config.toProcessingConfig());
     
-    // Save to file
+    // Update config manager and save to file
+    m_configManager->SetConfig(config);  // Thread-safe update
     m_configManager->Save();
     
     MessageBox(m_hwnd, "Settings applied and saved!", "Success", MB_OK | MB_ICONINFORMATION);

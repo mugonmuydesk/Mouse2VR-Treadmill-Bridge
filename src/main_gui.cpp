@@ -66,8 +66,8 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
         float stickX, stickY;
         processor->ProcessDelta(delta, elapsed, stickX, stickY);
         
-        // Update virtual controller
-        controller->SetLeftStick(stickX, stickY);
+        // Update virtual controller (Y-axis only for treadmill)
+        controller->SetLeftStick(0.0f, stickY);
         controller->Update();
         
         // Calculate update rate

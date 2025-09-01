@@ -74,8 +74,8 @@ int main(int argc, char* argv[]) {
     }
     std::cout << "✓ Virtual Xbox 360 controller created\n";
     
-    // Configure processor from config file
-    processor.SetConfig(config.toProcessingConfig());
+    // Configure processor from config file (thread-safe)
+    processor.SetConfig(configManager.GetConfig().toProcessingConfig());
     
     std::cout << "\nConfiguration:\n";
     std::cout << "  Update Rate: " << (1000 / config.updateIntervalMs) << " Hz\n";
@@ -150,8 +150,8 @@ int main(int argc, char* argv[]) {
         float stickX, stickY;
         processor.ProcessDelta(delta, elapsed, stickX, stickY);
         
-        // Update virtual controller
-        controller.SetLeftStick(stickX, stickY);
+        // Update virtual controller (Y-axis only for treadmill)
+        controller.SetLeftStick(0.0f, stickY);
         controller.Update();  // Now optimized to only send on changes
         
         // Calculate update rate

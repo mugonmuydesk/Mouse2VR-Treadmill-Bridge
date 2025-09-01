@@ -18,18 +18,24 @@ bool ConfigManager::Load() {
     try {
         nlohmann::json j;
         file >> j;
+        
+        std::lock_guard<std::mutex> lock(m_configMutex);
         m_config = JsonToConfig(j);
+        
         std::cout << "Configuration loaded from " << m_configPath << "\n";
         return true;
     } catch (const std::exception& e) {
         std::cerr << "Failed to parse config file: " << e.what() << "\n";
         std::cerr << "Using default configuration\n";
+        
+        std::lock_guard<std::mutex> lock(m_configMutex);
         m_config = AppConfig{};
+        
         return false;
     }
 }
 
-bool ConfigManager::Save() const {
+bool ConfigManager::Save() {
     try {
         std::ofstream file(m_configPath);
         if (!file.is_open()) {
@@ -37,8 +43,10 @@ bool ConfigManager::Save() const {
             return false;
         }
         
+        std::lock_guard<std::mutex> lock(m_configMutex);
         nlohmann::json j = ConfigToJson(m_config);
         file << j.dump(4);  // Pretty print with 4 spaces
+        
         return true;
     } catch (const std::exception& e) {
         std::cerr << "Failed to save config: " << e.what() << "\n";
@@ -123,6 +131,16 @@ AppConfig ConfigManager::JsonToConfig(const nlohmann::json& j) {
     }
     
     return config;
+}
+
+AppConfig ConfigManager::GetConfig() const {
+    std::lock_guard<std::mutex> lock(m_configMutex);
+    return m_config;
+}
+
+void ConfigManager::SetConfig(const AppConfig& config) {
+    std::lock_guard<std::mutex> lock(m_configMutex);
+    m_config = config;
 }
 
 } // namespace Mouse2VR

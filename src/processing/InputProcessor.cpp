@@ -33,6 +33,9 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, floa
     x = ApplyDeadzone(x);
     y = ApplyDeadzone(y);
     
+    // Force X to 0 for treadmill (Y-axis only movement)
+    x = 0.0f;
+    
     // Store for metrics
     m_lastStickX = x;
     m_lastStickY = y;

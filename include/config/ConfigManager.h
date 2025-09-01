@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include "processing/InputProcessor.h"
 
@@ -49,14 +50,13 @@ public:
     bool Load();
     
     // Save current configuration to file
-    bool Save() const;
+    bool Save();
     
-    // Get current configuration
-    const AppConfig& GetConfig() const { return m_config; }
-    AppConfig& GetConfig() { return m_config; }
+    // Get current configuration (thread-safe)
+    AppConfig GetConfig() const;
     
-    // Set configuration
-    void SetConfig(const AppConfig& config) { m_config = config; }
+    // Set configuration (thread-safe)
+    void SetConfig(const AppConfig& config);
     
     // Create default config file if it doesn't exist
     bool CreateDefaultConfig() const;
@@ -64,6 +64,7 @@ public:
 private:
     std::string m_configPath;
     AppConfig m_config;
+    mutable std::mutex m_configMutex;  // Protects m_config
     
     // JSON serialization
     static nlohmann::json ConfigToJson(const AppConfig& config);

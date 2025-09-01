@@ -1,0 +1,82 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    
+    strategy:
+      matrix:
+        config: [Debug, Release]
+        
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        
+    - name: Setup CMake
+      uses: lukka/get-cmake@latest
+      
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+      
+    - name: Build
+      run: cmake --build build --config ${{ matrix.config }}
+      
+    - name: Upload Artifacts
+      if: matrix.config == 'Release'
+      uses: actions/upload-artifact@v3
+      with:
+        name: Mouse2VR-${{ matrix.config }}
+        path: |
+          build/bin/${{ matrix.config }}/Mouse2VR.exe
+          build/bin/${{ matrix.config }}/*.dll
+          
+  create-release:
+    needs: build-windows
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: Mouse2VR-Release
+        path: release-files
+        
+    - name: Create Release Package
+      run: |
+        cd release-files
+        zip -r ../Mouse2VR-Release.zip *
+        
+    - name: Get version
+      id: version
+      run: echo "version=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: v${{ steps.version.outputs.version }}
+        name: Release ${{ steps.version.outputs.version }}
+        draft: false
+        prerelease: false
+        files: Mouse2VR-Release.zip
+        body: |
+          ## Mouse2VR Release
+          
+          ### Installation
+          1. Download and extract Mouse2VR-Release.zip
+          2. Install ViGEmBus driver if not already installed
+          3. Run Mouse2VR.exe
+          
+          ### Changes
+          See [commit history](https://github.com/${{ github.repository }}/commits/main) for details.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

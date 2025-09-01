@@ -1,0 +1,38 @@
+# Build directories
+build/
+out/
+cmake-build-*/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln
+*.vcxproj*
+
+# Compiled files
+*.exe
+*.dll
+*.lib
+*.a
+*.o
+*.obj
+*.pdb
+
+# Config files (user-specific)
+m2j_config.json
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*~
+*.swp
+
+# Log files
+*.log

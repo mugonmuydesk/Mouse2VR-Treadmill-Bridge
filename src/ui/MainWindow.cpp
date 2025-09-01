@@ -238,6 +238,7 @@ void MainWindow::RemoveTrayIcon() {
 
 void MainWindow::Show() {
     ShowWindow(m_hwnd, SW_SHOW);
+    UpdateWindow(m_hwnd);  // Force immediate paint
     SetForegroundWindow(m_hwnd);
     m_visible = true;
 }
@@ -296,14 +297,41 @@ int MainWindow::Run() {
         }
     }
     
-    while (GetMessage(&msg, nullptr, 0, 0)) {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
-        
-        messageCount++;
-        
-        if (m_shouldExit) {
-            break;
+    // Try using PeekMessage instead of GetMessage
+    bool running = true;
+    while (running && !m_shouldExit) {
+        // Use PeekMessage with PM_REMOVE to get and remove messages
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                running = false;
+                break;
+            }
+            
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+            messageCount++;
+            
+            // Log first few messages for debugging
+            if (messageCount <= 5) {
+                hFile = CreateFile("C:\\Tools\\mouse2vr_run_debug.log", 
+                                  GENERIC_WRITE, 
+                                  FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                  NULL, 
+                                  OPEN_ALWAYS, 
+                                  FILE_ATTRIBUTE_NORMAL, 
+                                  NULL);
+                if (hFile != INVALID_HANDLE_VALUE) {
+                    SetFilePointer(hFile, 0, NULL, FILE_END);
+                    char msgBuf[256];
+                    sprintf_s(msgBuf, "DEBUG: Processed message %d (msg=0x%X)\n", messageCount, msg.message);
+                    DWORD written;
+                    WriteFile(hFile, msgBuf, strlen(msgBuf), &written, NULL);
+                    CloseHandle(hFile);
+                }
+            }
+        } else {
+            // No messages, yield CPU time
+            Sleep(1);
         }
     }
     

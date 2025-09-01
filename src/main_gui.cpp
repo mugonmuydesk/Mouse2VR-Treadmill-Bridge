@@ -177,14 +177,12 @@ int RunApplication(HINSTANCE hInstance) {
     fflush(debugLog);
     window.SetComponents(&inputHandler, &controller, &processor, &configManager);
     
-    // NOW start processing thread after everything is initialized
-    fprintf(debugLog, "DEBUG: Starting processing thread...\n");
+    // DON'T start processing thread yet - it might be causing issues
+    fprintf(debugLog, "DEBUG: Skipping processing thread for now...\n");
     fflush(debugLog);
-    std::thread processingThread(ProcessingThread, &window, &inputHandler, 
-                                &controller, &processor, &configManager);
     
-    // Run message loop
-    fprintf(debugLog, "DEBUG: Entering window message loop (Run())...\n");
+    // Run message loop WITHOUT the processing thread to see if it works
+    fprintf(debugLog, "DEBUG: Entering window message loop (Run()) WITHOUT processing thread...\n");
     fflush(debugLog);
     int result = window.Run();
     
@@ -194,11 +192,9 @@ int RunApplication(HINSTANCE hInstance) {
     // Cleanup
     g_running = false;
     
-    if (processingThread.joinable()) {
-        fprintf(debugLog, "DEBUG: Waiting for processing thread to finish...\n");
-        fflush(debugLog);
-        processingThread.join();
-    }
+    // No processing thread to join
+    fprintf(debugLog, "DEBUG: No processing thread to wait for\n");
+    fflush(debugLog);
     
     // Save configuration
     fprintf(debugLog, "DEBUG: Saving configuration...\n");

@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Mouse2VR Treadmill Bridge">
+        Title="Mouse2VR Treadmill Bridge - WinUI 3">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>

@@ -9,11 +9,17 @@ InputProcessor::InputProcessor() {
 }
 
 void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, float& outX, float& outY) {
-    // Apply sensitivity
-    float x = delta.x * m_config.sensitivity / 1000.0f;  // Normalize to reasonable range
-    float y = delta.y * m_config.sensitivity / 1000.0f;
+    // Apply sensitivity (scale down less aggressively for better response)
+    float x = delta.x * m_config.sensitivity / 100.0f;  // Changed from 1000 to 100 for better scaling
+    float y = delta.y * m_config.sensitivity / 100.0f;
     
-    // Apply inversion
+    // Note: Mouse forward (away from user) = negative delta.y
+    //       Mouse backward (toward user) = positive delta.y
+    // We want: forward = positive stick, backward = negative stick
+    // So we need to invert the Y axis by default
+    y = -y;  // Invert so forward mouse = positive stick
+    
+    // Apply user inversion preferences (on top of default inversion)
     if (m_config.invertX) x = -x;
     if (m_config.invertY) y = -y;
     

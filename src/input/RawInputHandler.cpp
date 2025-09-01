@@ -15,52 +15,28 @@ RawInputHandler::~RawInputHandler() {
     s_instance = nullptr;
 }
 
-bool RawInputHandler::Initialize() {
+bool RawInputHandler::Initialize(HWND targetWindow) {
     if (m_initialized) {
         return true;
     }
     
-    // Register window class
-    WNDCLASSEX wc = {};
-    wc.cbSize = sizeof(WNDCLASSEX);
-    wc.lpfnWndProc = WindowProc;
-    wc.hInstance = GetModuleHandle(nullptr);
-    wc.lpszClassName = "Mouse2VRRawInput";
-    
-    if (!RegisterClassEx(&wc)) {
-        std::cerr << "Failed to register window class\n";
+    if (!targetWindow || !IsWindow(targetWindow)) {
+        std::cerr << "Invalid target window for Raw Input\n";
         return false;
     }
     
-    // Create message-only window
-    m_window = CreateWindowEx(
-        0,
-        "Mouse2VRRawInput",
-        "Mouse2VR Raw Input Handler",
-        0,
-        0, 0, 0, 0,
-        HWND_MESSAGE,
-        nullptr,
-        GetModuleHandle(nullptr),
-        nullptr
-    );
+    m_targetWindow = targetWindow;
     
-    if (!m_window) {
-        std::cerr << "Failed to create raw input window\n";
-        return false;
-    }
-    
-    // Register for raw mouse input
+    // Register for raw mouse input on the provided window
     RAWINPUTDEVICE rid = {};
     rid.usUsagePage = 0x01;  // Generic desktop controls
     rid.usUsage = 0x02;      // Mouse
     rid.dwFlags = RIDEV_INPUTSINK;  // Get input even when not in foreground
-    rid.hwndTarget = m_window;
+    rid.hwndTarget = m_targetWindow;
     
     if (!RegisterRawInputDevices(&rid, 1, sizeof(rid))) {
         std::cerr << "Failed to register raw input device\n";
-        DestroyWindow(m_window);
-        m_window = nullptr;
+        m_targetWindow = nullptr;
         return false;
     }
     
@@ -70,12 +46,15 @@ bool RawInputHandler::Initialize() {
 }
 
 void RawInputHandler::Shutdown() {
-    if (m_window) {
-        DestroyWindow(m_window);
-        m_window = nullptr;
-    }
+    // Unregister raw input
+    RAWINPUTDEVICE rid = {};
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = RIDEV_REMOVE;
+    rid.hwndTarget = nullptr;
+    RegisterRawInputDevices(&rid, 1, sizeof(rid));
     
-    UnregisterClass("Mouse2VRRawInput", GetModuleHandle(nullptr));
+    m_targetWindow = nullptr;
     m_initialized = false;
 }
 

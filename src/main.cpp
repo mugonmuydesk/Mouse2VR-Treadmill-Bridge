@@ -59,9 +59,16 @@ int main(int argc, char* argv[]) {
     Mouse2VR::ViGEmController controller;
     Mouse2VR::InputProcessor processor;
     
+    // Create a message-only window for Raw Input (console app needs one)
+    HWND messageWindow = CreateWindowEx(0, "STATIC", "Mouse2VR Console", 
+                                        0, 0, 0, 0, 0, 
+                                        HWND_MESSAGE, nullptr, 
+                                        GetModuleHandle(nullptr), nullptr);
+    
     // Initialize Raw Input
-    if (!inputHandler.Initialize()) {
+    if (!inputHandler.Initialize(messageWindow)) {
         std::cerr << "Failed to initialize Raw Input\n";
+        if (messageWindow) DestroyWindow(messageWindow);
         return 1;
     }
     std::cout << "✓ Raw Input initialized\n";

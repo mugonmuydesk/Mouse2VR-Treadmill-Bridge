@@ -257,7 +257,7 @@ int MainWindow::Run() {
     // Show() is now called from main_gui.cpp before starting the thread
     
     // Simple test - write to file using Windows API instead of C runtime
-    HANDLE hFile = CreateFile("C:\\Tools\\mouse2vr_run_debug.log", 
+    HANDLE hFile = CreateFile("mouse2vr_run_debug.log", 
                              GENERIC_WRITE, 
                              FILE_SHARE_READ | FILE_SHARE_WRITE,
                              NULL, 
@@ -278,7 +278,7 @@ int MainWindow::Run() {
     // Try PeekMessage first to see if there are any messages
     if (PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE)) {
         // Append to log
-        hFile = CreateFile("C:\\Tools\\mouse2vr_run_debug.log", 
+        hFile = CreateFile("mouse2vr_run_debug.log", 
                           GENERIC_WRITE, 
                           FILE_SHARE_READ | FILE_SHARE_WRITE,
                           NULL, 
@@ -310,7 +310,7 @@ int MainWindow::Run() {
             
             // Log first few messages for debugging
             if (messageCount <= 5) {
-                hFile = CreateFile("C:\\Tools\\mouse2vr_run_debug.log", 
+                hFile = CreateFile("mouse2vr_run_debug.log", 
                                   GENERIC_WRITE, 
                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
                                   NULL, 

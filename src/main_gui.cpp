@@ -94,12 +94,20 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
 }
 
 int RunApplication(HINSTANCE hInstance) {
-    // Open debug log file
+    // Open debug log file in current directory
     FILE* debugLog = nullptr;
-    fopen_s(&debugLog, "C:\\Tools\\mouse2vr_debug.log", "w");
+    fopen_s(&debugLog, "mouse2vr_debug.log", "w");
     if (!debugLog) {
-        MessageBox(nullptr, "Failed to create debug log", "Error", MB_OK | MB_ICONERROR);
-        return 1;
+        // Try alternative location if current directory fails
+        char tempPath[MAX_PATH];
+        GetTempPathA(MAX_PATH, tempPath);
+        strcat_s(tempPath, "mouse2vr_debug.log");
+        fopen_s(&debugLog, tempPath, "w");
+        
+        if (!debugLog) {
+            MessageBox(nullptr, "Failed to create debug log", "Error", MB_OK | MB_ICONERROR);
+            return 1;
+        }
     }
     
     fprintf(debugLog, "DEBUG: Starting Mouse2VR GUI initialization...\n");

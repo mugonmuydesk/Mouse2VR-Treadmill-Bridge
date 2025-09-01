@@ -1,5 +1,5 @@
 #pragma once
-#include "input/RawInputHandler.h"
+#include "core/RawInputHandler.h"
 #include <atomic>
 
 namespace Mouse2VR {

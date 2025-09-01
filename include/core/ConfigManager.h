@@ -2,7 +2,7 @@
 #include <string>
 #include <mutex>
 #include <nlohmann/json.hpp>
-#include "processing/InputProcessor.h"
+#include "core/InputProcessor.h"
 
 namespace Mouse2VR {
 

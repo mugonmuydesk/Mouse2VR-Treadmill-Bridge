@@ -8,6 +8,7 @@
 #include <shellapi.h>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>  // For std::min
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -291,7 +292,7 @@ void MainWindow::DrawStickPosition(HDC hdc, RECT rect) {
     HBRUSH nullBrush = (HBRUSH)GetStockObject(NULL_BRUSH);
     HBRUSH oldBrush = (HBRUSH)SelectObject(hdc, nullBrush);
     
-    int radius = min(rect.right - rect.left, rect.bottom - rect.top) / 2 - 10;
+    int radius = std::min(rect.right - rect.left, rect.bottom - rect.top) / 2 - 10;
     Ellipse(hdc, centerX - radius, centerY - radius, centerX + radius, centerY + radius);
     
     // Draw stick position

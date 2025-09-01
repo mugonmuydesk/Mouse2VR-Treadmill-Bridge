@@ -2,6 +2,7 @@
 #include <thread>
 #include <chrono>
 #include <atomic>
+#include <cstdio>
 
 #include "ui/MainWindow.h"
 #include "input/RawInputHandler.h"
@@ -123,7 +124,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Create and initialize window
     Mouse2VR::MainWindow window;
     if (!window.Initialize(hInstance)) {
-        MessageBox(nullptr, "Failed to create window", "Error", MB_OK | MB_ICONERROR);
+        DWORD error = GetLastError();
+        char msg[256];
+        sprintf_s(msg, "Failed to create window. Error code: %lu", error);
+        MessageBox(nullptr, msg, "Window Creation Error", MB_OK | MB_ICONERROR);
         return 1;
     }
     

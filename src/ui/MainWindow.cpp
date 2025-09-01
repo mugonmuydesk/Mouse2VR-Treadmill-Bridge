@@ -9,6 +9,7 @@
 #include <sstream>
 #include <iomanip>
 #include <algorithm>  // For std::min
+#include <cstdio>     // For sprintf_s
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -41,8 +42,9 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
     // Initialize Common Controls (required for sliders, etc)
     INITCOMMONCONTROLSEX icc = {};
     icc.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    icc.dwICC = ICC_WIN95_CLASSES | ICC_STANDARD_CLASSES;
+    icc.dwICC = ICC_BAR_CLASSES | ICC_WIN95_CLASSES;
     if (!InitCommonControlsEx(&icc)) {
+        MessageBox(nullptr, "Failed to initialize Common Controls", "Init Error", MB_OK | MB_ICONERROR);
         return false;
     }
     
@@ -62,6 +64,10 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
     wc.hIconSm = LoadIcon(nullptr, IDI_APPLICATION);
     
     if (!RegisterClassEx(&wc)) {
+        DWORD error = GetLastError();
+        char msg[256];
+        sprintf_s(msg, "Failed to register window class. Error: %lu", error);
+        MessageBox(nullptr, msg, "Window Class Error", MB_OK | MB_ICONERROR);
         return false;
     }
     
@@ -80,6 +86,10 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
     );
     
     if (!m_hwnd) {
+        DWORD error = GetLastError();
+        char msg[256];
+        sprintf_s(msg, "Failed to create window. Error: %lu", error);
+        MessageBox(nullptr, msg, "Window Creation Error", MB_OK | MB_ICONERROR);
         return false;
     }
     

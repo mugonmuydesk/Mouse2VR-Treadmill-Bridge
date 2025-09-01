@@ -38,6 +38,14 @@ MainWindow::~MainWindow() {
 bool MainWindow::Initialize(HINSTANCE hInstance) {
     m_hInstance = hInstance;
     
+    // Initialize Common Controls (required for sliders, etc)
+    INITCOMMONCONTROLSEX icc = {};
+    icc.dwSize = sizeof(INITCOMMONCONTROLSEX);
+    icc.dwICC = ICC_WIN95_CLASSES | ICC_STANDARD_CLASSES;
+    if (!InitCommonControlsEx(&icc)) {
+        return false;
+    }
+    
     // Register window class
     WNDCLASSEX wc = {};
     wc.cbSize = sizeof(WNDCLASSEX);
@@ -465,6 +473,12 @@ void MainWindow::SetComponents(RawInputHandler* input, ViGEmController* controll
 
 void MainWindow::LoadSettings() {
     if (!m_configManager) return;
+    
+    // Make sure controls exist before trying to use them
+    if (!m_sensitivitySlider || !m_updateRateCombo || !m_invertYCheck || 
+        !m_lockXCheck || !m_adaptiveModeCheck) {
+        return;  // Controls not created yet
+    }
     
     const auto config = m_configManager->GetConfig();  // Thread-safe copy
     

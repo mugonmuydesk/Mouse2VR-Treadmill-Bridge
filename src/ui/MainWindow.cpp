@@ -95,8 +95,6 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
 }
 
 void MainWindow::CreateControls() {
-    // TEMPORARY: Skip complex controls to test if they're causing the hang
-    return;
     // Title label
     CreateWindow("STATIC", "Mouse2VR Treadmill Bridge",
         WS_CHILD | WS_VISIBLE | SS_CENTER,
@@ -127,45 +125,60 @@ void MainWindow::CreateControls() {
         10, 340, 780, 200,
         m_hwnd, nullptr, m_hInstance, nullptr);
     
-    // Sensitivity slider
+    // Sensitivity controls using simple buttons and edit
     CreateWindow("STATIC", "Sensitivity:",
         WS_CHILD | WS_VISIBLE | SS_LEFT,
         30, 370, 100, 20,
         m_hwnd, nullptr, m_hInstance, nullptr);
     
-    m_sensitivitySlider = CreateWindow(TRACKBAR_CLASS, "",
-        WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS | TBS_TOOLTIPS,
-        140, 370, 200, 30,
+    // Use an edit control instead of trackbar
+    m_sensitivityEdit = CreateWindow("EDIT", "1.0",
+        WS_CHILD | WS_VISIBLE | WS_BORDER | ES_LEFT,
+        140, 370, 60, 25,
         m_hwnd, (HMENU)2001, m_hInstance, nullptr);
     
-    if (m_sensitivitySlider) {
-        SendMessage(m_sensitivitySlider, TBM_SETRANGE, TRUE, MAKELONG(10, 300));
-        SendMessage(m_sensitivitySlider, TBM_SETPOS, TRUE, 100);
-    } else {
-        MessageBox(m_hwnd, "Failed to create sensitivity slider - Common Controls issue", "Control Error", MB_OK | MB_ICONERROR);
-    }
+    // Add - and + buttons for adjustment
+    CreateWindow("BUTTON", "-",
+        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        210, 370, 30, 25,
+        m_hwnd, (HMENU)2006, m_hInstance, nullptr);
     
-    m_sensitivityLabel = CreateWindow("STATIC", "1.0",
+    CreateWindow("BUTTON", "+",
+        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+        250, 370, 30, 25,
+        m_hwnd, (HMENU)2007, m_hInstance, nullptr);
+    
+    m_sensitivityLabel = CreateWindow("STATIC", "(0.1 - 3.0)",
         WS_CHILD | WS_VISIBLE | SS_LEFT,
-        350, 370, 50, 20,
+        290, 370, 80, 20,
         m_hwnd, nullptr, m_hInstance, nullptr);
     
-    // Update rate combo
+    // Update rate using radio buttons instead of combo
     CreateWindow("STATIC", "Update Rate:",
         WS_CHILD | WS_VISIBLE | SS_LEFT,
         30, 410, 100, 20,
         m_hwnd, nullptr, m_hInstance, nullptr);
     
-    m_updateRateCombo = CreateWindow("COMBOBOX", "",
-        WS_CHILD | WS_VISIBLE | CBS_DROPDOWNLIST,
-        140, 410, 120, 100,
-        m_hwnd, (HMENU)2002, m_hInstance, nullptr);
+    m_rate30Radio = CreateWindow("BUTTON", "30 Hz",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON | WS_GROUP,
+        140, 410, 70, 20,
+        m_hwnd, (HMENU)2008, m_hInstance, nullptr);
     
-    SendMessage(m_updateRateCombo, CB_ADDSTRING, 0, (LPARAM)"30 Hz");
-    SendMessage(m_updateRateCombo, CB_ADDSTRING, 0, (LPARAM)"50 Hz");
-    SendMessage(m_updateRateCombo, CB_ADDSTRING, 0, (LPARAM)"60 Hz");
-    SendMessage(m_updateRateCombo, CB_ADDSTRING, 0, (LPARAM)"100 Hz");
-    SendMessage(m_updateRateCombo, CB_SETCURSEL, 1, 0);  // Default 50 Hz
+    m_rate50Radio = CreateWindow("BUTTON", "50 Hz",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        220, 410, 70, 20,
+        m_hwnd, (HMENU)2009, m_hInstance, nullptr);
+    SendMessage(m_rate50Radio, BM_SETCHECK, BST_CHECKED, 0);  // Default 50 Hz
+    
+    m_rate60Radio = CreateWindow("BUTTON", "60 Hz",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        300, 410, 70, 20,
+        m_hwnd, (HMENU)2010, m_hInstance, nullptr);
+    
+    m_rate100Radio = CreateWindow("BUTTON", "100 Hz",
+        WS_CHILD | WS_VISIBLE | BS_AUTORADIOBUTTON,
+        380, 410, 70, 20,
+        m_hwnd, (HMENU)2011, m_hInstance, nullptr);
     
     // Checkboxes
     m_invertYCheck = CreateWindow("BUTTON", "Invert Y Axis",
@@ -450,19 +463,30 @@ LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPa
         case 3002:  // Minimize to tray
             Hide();
             return 0;
+        case 2006:  // Sensitivity - button
+            {
+                char sensitivityStr[256];
+                GetWindowText(m_sensitivityEdit, sensitivityStr, sizeof(sensitivityStr));
+                float sensitivity = static_cast<float>(atof(sensitivityStr));
+                sensitivity -= 0.1f;
+                if (sensitivity < 0.1f) sensitivity = 0.1f;
+                sprintf_s(sensitivityStr, "%.1f", sensitivity);
+                SetWindowText(m_sensitivityEdit, sensitivityStr);
+            }
+            return 0;
+        case 2007:  // Sensitivity + button
+            {
+                char sensitivityStr[256];
+                GetWindowText(m_sensitivityEdit, sensitivityStr, sizeof(sensitivityStr));
+                float sensitivity = static_cast<float>(atof(sensitivityStr));
+                sensitivity += 0.1f;
+                if (sensitivity > 3.0f) sensitivity = 3.0f;
+                sprintf_s(sensitivityStr, "%.1f", sensitivity);
+                SetWindowText(m_sensitivityEdit, sensitivityStr);
+            }
+            return 0;
         }
         break;
-        
-    case WM_HSCROLL:
-        if ((HWND)lParam == m_sensitivitySlider) {
-            int pos = SendMessage(m_sensitivitySlider, TBM_GETPOS, 0, 0);
-            float sensitivity = pos / 100.0f;
-            
-            std::stringstream ss;
-            ss << std::fixed << std::setprecision(1) << sensitivity;
-            SetWindowText(m_sensitivityLabel, ss.str().c_str());
-        }
-        return 0;
         
     case WM_DRAWITEM: {
         DRAWITEMSTRUCT* dis = reinterpret_cast<DRAWITEMSTRUCT*>(lParam);
@@ -492,23 +516,32 @@ void MainWindow::LoadSettings() {
     if (!m_configManager) return;
     
     // Make sure controls exist before trying to use them
-    if (!m_sensitivitySlider || !m_updateRateCombo || !m_invertYCheck || 
+    if (!m_sensitivityEdit || !m_rate50Radio || !m_invertYCheck || 
         !m_lockXCheck || !m_adaptiveModeCheck) {
         return;  // Controls not created yet
     }
     
     const auto config = m_configManager->GetConfig();  // Thread-safe copy
     
-    // Set sensitivity slider
-    SendMessage(m_sensitivitySlider, TBM_SETPOS, TRUE, static_cast<LPARAM>(config.sensitivity * 100));
+    // Set sensitivity edit box
+    char sensitivityStr[16];
+    sprintf_s(sensitivityStr, "%.1f", config.sensitivity);
+    SetWindowText(m_sensitivityEdit, sensitivityStr);
     
-    // Set update rate combo
-    int rateIndex = 1;  // Default 50Hz
-    if (config.updateIntervalMs >= 33) rateIndex = 0;      // 30Hz
-    else if (config.updateIntervalMs >= 20) rateIndex = 1; // 50Hz
-    else if (config.updateIntervalMs >= 16) rateIndex = 2; // 60Hz
-    else rateIndex = 3;                                    // 100Hz
-    SendMessage(m_updateRateCombo, CB_SETCURSEL, rateIndex, 0);
+    // Set update rate radio buttons
+    SendMessage(m_rate30Radio, BM_SETCHECK, BST_UNCHECKED, 0);
+    SendMessage(m_rate50Radio, BM_SETCHECK, BST_UNCHECKED, 0);
+    SendMessage(m_rate60Radio, BM_SETCHECK, BST_UNCHECKED, 0);
+    SendMessage(m_rate100Radio, BM_SETCHECK, BST_UNCHECKED, 0);
+    
+    if (config.updateIntervalMs >= 33) 
+        SendMessage(m_rate30Radio, BM_SETCHECK, BST_CHECKED, 0);      // 30Hz
+    else if (config.updateIntervalMs >= 20) 
+        SendMessage(m_rate50Radio, BM_SETCHECK, BST_CHECKED, 0);      // 50Hz
+    else if (config.updateIntervalMs >= 16) 
+        SendMessage(m_rate60Radio, BM_SETCHECK, BST_CHECKED, 0);      // 60Hz
+    else 
+        SendMessage(m_rate100Radio, BM_SETCHECK, BST_CHECKED, 0);     // 100Hz
     
     // Set checkboxes
     SendMessage(m_invertYCheck, BM_SETCHECK, config.invertY ? BST_CHECKED : BST_UNCHECKED, 0);
@@ -521,18 +554,24 @@ void MainWindow::ApplySettings() {
     
     auto config = m_configManager->GetConfig();  // Thread-safe copy
     
-    // Get sensitivity
-    int pos = SendMessage(m_sensitivitySlider, TBM_GETPOS, 0, 0);
-    config.sensitivity = pos / 100.0f;
+    // Get sensitivity from edit box
+    char sensitivityStr[256];
+    GetWindowText(m_sensitivityEdit, sensitivityStr, sizeof(sensitivityStr));
+    float sensitivity = static_cast<float>(atof(sensitivityStr));
+    // Clamp to valid range
+    if (sensitivity < 0.1f) sensitivity = 0.1f;
+    if (sensitivity > 3.0f) sensitivity = 3.0f;
+    config.sensitivity = sensitivity;
     
-    // Get update rate
-    int rateIndex = SendMessage(m_updateRateCombo, CB_GETCURSEL, 0, 0);
-    switch (rateIndex) {
-    case 0: config.updateIntervalMs = 33; break;  // 30Hz
-    case 1: config.updateIntervalMs = 20; break;  // 50Hz
-    case 2: config.updateIntervalMs = 16; break;  // 60Hz
-    case 3: config.updateIntervalMs = 10; break;  // 100Hz
-    }
+    // Get update rate from radio buttons
+    if (SendMessage(m_rate30Radio, BM_GETCHECK, 0, 0) == BST_CHECKED)
+        config.updateIntervalMs = 33;  // 30Hz
+    else if (SendMessage(m_rate50Radio, BM_GETCHECK, 0, 0) == BST_CHECKED)
+        config.updateIntervalMs = 20;  // 50Hz
+    else if (SendMessage(m_rate60Radio, BM_GETCHECK, 0, 0) == BST_CHECKED)
+        config.updateIntervalMs = 16;  // 60Hz
+    else if (SendMessage(m_rate100Radio, BM_GETCHECK, 0, 0) == BST_CHECKED)
+        config.updateIntervalMs = 10;  // 100Hz
     
     // Get checkboxes
     config.invertY = SendMessage(m_invertYCheck, BM_GETCHECK, 0, 0) == BST_CHECKED;

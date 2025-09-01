@@ -77,9 +77,12 @@ private:
     
     // Controls
     HWND m_statusText = nullptr;
-    HWND m_sensitivitySlider = nullptr;
+    HWND m_sensitivityEdit = nullptr;
     HWND m_sensitivityLabel = nullptr;
-    HWND m_updateRateCombo = nullptr;
+    HWND m_rate30Radio = nullptr;
+    HWND m_rate50Radio = nullptr;
+    HWND m_rate60Radio = nullptr;
+    HWND m_rate100Radio = nullptr;
     HWND m_invertYCheck = nullptr;
     HWND m_lockXCheck = nullptr;
     HWND m_adaptiveModeCheck = nullptr;

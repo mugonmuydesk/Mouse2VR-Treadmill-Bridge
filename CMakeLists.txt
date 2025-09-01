@@ -106,10 +106,10 @@ if(BUILD_WIN32_GUI)
     )
 endif()
 
-# WinUI 3 application (new - Phase 2)
+# WinUI 3 application (new)
 if(BUILD_WINUI)
-    message(STATUS "WinUI 3 support will be added in Phase 2")
-    # add_subdirectory(src/winui)
+    message(STATUS "Building WinUI 3 application")
+    add_subdirectory(src/winui)
 endif()
 
 # Install rules

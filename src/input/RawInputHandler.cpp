@@ -114,13 +114,6 @@ void RawInputHandler::ProcessRawInput(LPARAM lParam) {
     }
 }
 
-LRESULT CALLBACK RawInputHandler::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (msg == WM_INPUT && s_instance) {
-        s_instance->ProcessRawInput(lParam);
-        return 0;
-    }
-    
-    return DefWindowProc(hwnd, msg, wParam, lParam);
-}
+// WindowProc removed - Raw input now handled by MainWindow
 
 } // namespace Mouse2VR

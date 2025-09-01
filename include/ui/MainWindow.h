@@ -44,6 +44,9 @@ public:
     // Check if should exit
     bool ShouldExit() const { return m_shouldExit; }
     
+    // Get window handle
+    HWND GetHWND() const { return m_hwnd; }
+    
 private:
     // Window procedure
     static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);

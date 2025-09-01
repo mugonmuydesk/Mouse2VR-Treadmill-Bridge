@@ -141,8 +141,8 @@ int RunApplication(HINSTANCE hInstance) {
     fprintf(debugLog, "DEBUG: Initializing Raw Input...\n");
     fflush(debugLog);
     
-    // Initialize Raw Input
-    if (!inputHandler.Initialize()) {
+    // Initialize Raw Input with MainWindow's handle
+    if (!inputHandler.Initialize(window.GetHWND())) {
         fprintf(debugLog, "ERROR: Failed to initialize Raw Input\n");
         fflush(debugLog);
         fclose(debugLog);
@@ -177,12 +177,14 @@ int RunApplication(HINSTANCE hInstance) {
     fflush(debugLog);
     window.SetComponents(&inputHandler, &controller, &processor, &configManager);
     
-    // DON'T start processing thread yet - it might be causing issues
-    fprintf(debugLog, "DEBUG: Skipping processing thread for now...\n");
+    // Start processing thread after everything is initialized
+    fprintf(debugLog, "DEBUG: Starting processing thread...\n");
     fflush(debugLog);
+    std::thread processingThread(ProcessingThread, &window, &inputHandler, 
+                                &controller, &processor, &configManager);
     
-    // Run message loop WITHOUT the processing thread to see if it works
-    fprintf(debugLog, "DEBUG: Entering window message loop (Run()) WITHOUT processing thread...\n");
+    // Run message loop
+    fprintf(debugLog, "DEBUG: Entering window message loop (Run())...\n");
     fflush(debugLog);
     int result = window.Run();
     
@@ -192,9 +194,11 @@ int RunApplication(HINSTANCE hInstance) {
     // Cleanup
     g_running = false;
     
-    // No processing thread to join
-    fprintf(debugLog, "DEBUG: No processing thread to wait for\n");
-    fflush(debugLog);
+    if (processingThread.joinable()) {
+        fprintf(debugLog, "DEBUG: Waiting for processing thread to finish...\n");
+        fflush(debugLog);
+        processingThread.join();
+    }
     
     // Save configuration
     fprintf(debugLog, "DEBUG: Saving configuration...\n");

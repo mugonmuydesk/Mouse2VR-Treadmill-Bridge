@@ -96,9 +96,6 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
 }
 
 void MainWindow::CreateControls() {
-    // TEMPORARY: Skip ALL controls to test if window works without them
-    return;
-    
     // Title label
     CreateWindow("STATIC", "Mouse2VR Treadmill Bridge",
         WS_CHILD | WS_VISIBLE | SS_CENTER,
@@ -422,7 +419,11 @@ void MainWindow::DrawStickPosition(HDC hdc, RECT rect) {
 }
 
 void MainWindow::DrawInputGraph(HDC hdc, RECT rect) {
-    std::lock_guard<std::mutex> lock(m_dataMutex);
+    // Use try_lock to avoid deadlock - skip frame if locked
+    if (!m_dataMutex.try_lock()) {
+        return;  // Skip this paint if mutex is held by worker thread
+    }
+    std::lock_guard<std::mutex> lock(m_dataMutex, std::adopt_lock);
     
     // Draw background
     HBRUSH bgBrush = CreateSolidBrush(RGB(250, 250, 250));
@@ -489,6 +490,13 @@ LRESULT CALLBACK MainWindow::WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPAR
 
 LRESULT MainWindow::HandleMessage(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+    case WM_INPUT:
+        // Forward raw input to the handler
+        if (m_inputHandler) {
+            m_inputHandler->ProcessRawInput(lParam);
+        }
+        return 0;
+        
     case WM_DESTROY:
         RemoveTrayIcon();
         PostQuitMessage(0);

@@ -33,7 +33,7 @@ public:
     RawInputHandler();
     ~RawInputHandler();
     
-    bool Initialize();
+    bool Initialize(HWND targetWindow);
     void Shutdown();
     
     // Get accumulated deltas since last call (thread-safe)
@@ -49,9 +49,7 @@ public:
     bool IsInitialized() const { return m_initialized; }
 
 private:
-    static LRESULT CALLBACK WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    
-    HWND m_window = nullptr;
+    HWND m_targetWindow = nullptr;
     std::atomic<bool> m_initialized{false};
     
     mutable std::mutex m_deltaMutex;

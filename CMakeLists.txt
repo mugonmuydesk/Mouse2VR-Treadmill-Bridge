@@ -51,6 +51,7 @@ add_executable(${PROJECT_NAME}_GUI
     ${SOURCES_COMMON}
     ${SOURCES_GUI}
     ${HEADERS}
+    src/Mouse2VR_GUI.manifest
 )
 
 # Include directories for both versions

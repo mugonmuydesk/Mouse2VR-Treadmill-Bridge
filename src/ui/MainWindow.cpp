@@ -20,12 +20,7 @@ MainWindow* MainWindow::s_instance = nullptr;
 
 MainWindow::MainWindow() {
     s_instance = this;
-    
-    // Initialize common controls
-    INITCOMMONCONTROLSEX icex = {};
-    icex.dwSize = sizeof(INITCOMMONCONTROLSEX);
-    icex.dwICC = ICC_WIN95_CLASSES;
-    InitCommonControlsEx(&icex);
+    // Common controls initialization moved to Initialize() method
 }
 
 MainWindow::~MainWindow() {
@@ -76,7 +71,7 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
         WS_EX_APPWINDOW,
         "Mouse2VRMainWindow",
         "Mouse2VR Treadmill Bridge v2.1",
-        WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,
+        WS_OVERLAPPEDWINDOW & ~(WS_MAXIMIZEBOX | WS_THICKFRAME),
         CW_USEDEFAULT, CW_USEDEFAULT,
         800, 600,
         nullptr,

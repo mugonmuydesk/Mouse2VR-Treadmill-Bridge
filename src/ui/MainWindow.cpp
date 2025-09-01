@@ -95,6 +95,8 @@ bool MainWindow::Initialize(HINSTANCE hInstance) {
 }
 
 void MainWindow::CreateControls() {
+    // TEMPORARY: Skip complex controls to test if they're causing the hang
+    return;
     // Title label
     CreateWindow("STATIC", "Mouse2VR Treadmill Bridge",
         WS_CHILD | WS_VISIBLE | SS_CENTER,
@@ -135,8 +137,13 @@ void MainWindow::CreateControls() {
         WS_CHILD | WS_VISIBLE | TBS_AUTOTICKS | TBS_TOOLTIPS,
         140, 370, 200, 30,
         m_hwnd, (HMENU)2001, m_hInstance, nullptr);
-    SendMessage(m_sensitivitySlider, TBM_SETRANGE, TRUE, MAKELONG(10, 300));
-    SendMessage(m_sensitivitySlider, TBM_SETPOS, TRUE, 100);
+    
+    if (m_sensitivitySlider) {
+        SendMessage(m_sensitivitySlider, TBM_SETRANGE, TRUE, MAKELONG(10, 300));
+        SendMessage(m_sensitivitySlider, TBM_SETPOS, TRUE, 100);
+    } else {
+        MessageBox(m_hwnd, "Failed to create sensitivity slider - Common Controls issue", "Control Error", MB_OK | MB_ICONERROR);
+    }
     
     m_sensitivityLabel = CreateWindow("STATIC", "1.0",
         WS_CHILD | WS_VISIBLE | SS_LEFT,

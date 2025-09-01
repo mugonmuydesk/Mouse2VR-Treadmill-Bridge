@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <algorithm>  // For std::min
 #include <cstdio>     // For sprintf_s
+#include <cstring>    // For strlen
 
 #pragma comment(lib, "comctl32.lib")
 #pragma comment(lib, "shell32.lib")
@@ -257,38 +258,53 @@ void MainWindow::ToggleVisibility() {
 int MainWindow::Run() {
     // Show() is now called from main_gui.cpp before starting the thread
     
-    // Debug logging
-    FILE* debugLog = nullptr;
-    fopen_s(&debugLog, "C:\\Tools\\mouse2vr_debug.log", "a");
-    if (debugLog) {
-        fprintf(debugLog, "DEBUG: MainWindow::Run() - Entering message loop\n");
-        fflush(debugLog);
+    // Simple test - write to file using Windows API instead of C runtime
+    HANDLE hFile = CreateFile("C:\\Tools\\mouse2vr_run_debug.log", 
+                             GENERIC_WRITE, 
+                             FILE_SHARE_READ | FILE_SHARE_WRITE,
+                             NULL, 
+                             CREATE_ALWAYS, 
+                             FILE_ATTRIBUTE_NORMAL, 
+                             NULL);
+    
+    if (hFile != INVALID_HANDLE_VALUE) {
+        const char* msg1 = "DEBUG: MainWindow::Run() started\n";
+        DWORD written;
+        WriteFile(hFile, msg1, strlen(msg1), &written, NULL);
+        CloseHandle(hFile);
     }
     
     MSG msg;
     int messageCount = 0;
+    
+    // Try PeekMessage first to see if there are any messages
+    if (PeekMessage(&msg, nullptr, 0, 0, PM_NOREMOVE)) {
+        // Append to log
+        hFile = CreateFile("C:\\Tools\\mouse2vr_run_debug.log", 
+                          GENERIC_WRITE, 
+                          FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          NULL, 
+                          OPEN_ALWAYS, 
+                          FILE_ATTRIBUTE_NORMAL, 
+                          NULL);
+        if (hFile != INVALID_HANDLE_VALUE) {
+            SetFilePointer(hFile, 0, NULL, FILE_END);
+            const char* msg2 = "DEBUG: Messages available in queue\n";
+            DWORD written;
+            WriteFile(hFile, msg2, strlen(msg2), &written, NULL);
+            CloseHandle(hFile);
+        }
+    }
+    
     while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
         
         messageCount++;
-        if (debugLog && messageCount % 100 == 0) {
-            fprintf(debugLog, "DEBUG: Processed %d messages, still running...\n", messageCount);
-            fflush(debugLog);
-        }
         
         if (m_shouldExit) {
-            if (debugLog) {
-                fprintf(debugLog, "DEBUG: m_shouldExit set, breaking message loop\n");
-                fflush(debugLog);
-            }
             break;
         }
-    }
-    
-    if (debugLog) {
-        fprintf(debugLog, "DEBUG: Message loop ended, processed %d messages total\n", messageCount);
-        fclose(debugLog);
     }
     
     return static_cast<int>(msg.wParam);

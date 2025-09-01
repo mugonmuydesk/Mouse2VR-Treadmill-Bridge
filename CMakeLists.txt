@@ -21,9 +21,15 @@ add_subdirectory(external)
 find_package(Threads REQUIRED)
 
 # Collect source files
-file(GLOB_RECURSE SOURCES 
-    src/*.cpp
-    src/*.c
+file(GLOB_RECURSE SOURCES_COMMON
+    src/input/*.cpp
+    src/output/*.cpp
+    src/processing/*.cpp
+    src/config/*.cpp
+)
+
+file(GLOB_RECURSE SOURCES_GUI
+    src/ui/*.cpp
 )
 
 file(GLOB_RECURSE HEADERS
@@ -31,20 +37,32 @@ file(GLOB_RECURSE HEADERS
     include/*.hpp
 )
 
-# Create executable
+# Console version
 add_executable(${PROJECT_NAME} 
-    ${SOURCES} 
+    src/main.cpp
+    ${SOURCES_COMMON}
     ${HEADERS}
 )
 
-# Include directories
-target_include_directories(${PROJECT_NAME} PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/ViGEmClient/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/json/single_include
+# GUI version
+add_executable(${PROJECT_NAME}_GUI
+    WIN32  # Windows subsystem
+    src/main_gui.cpp
+    ${SOURCES_COMMON}
+    ${SOURCES_GUI}
+    ${HEADERS}
 )
 
-# Link libraries
+# Include directories for both versions
+foreach(target ${PROJECT_NAME} ${PROJECT_NAME}_GUI)
+    target_include_directories(${target} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/ViGEmClient/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external/json/single_include
+    )
+endforeach()
+
+# Link libraries for console version
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Threads::Threads
     ViGEmClient
@@ -55,17 +73,37 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Xinput
 )
 
+# Link libraries for GUI version
+target_link_libraries(${PROJECT_NAME}_GUI PRIVATE
+    Threads::Threads
+    ViGEmClient
+    setupapi
+    winmm
+    version
+    imm32
+    Xinput
+    comctl32
+    shell32
+    user32
+    gdi32
+)
+
 # Windows specific settings
 if(WIN32)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE
-        WIN32_LEAN_AND_MEAN
-        NOMINMAX
-        _CRT_SECURE_NO_WARNINGS
-    )
+    foreach(target ${PROJECT_NAME} ${PROJECT_NAME}_GUI)
+        target_compile_definitions(${target} PRIVATE
+            WIN32_LEAN_AND_MEAN
+            NOMINMAX
+            _CRT_SECURE_NO_WARNINGS
+        )
+    endforeach()
     
     # Set Windows subsystem
     set_target_properties(${PROJECT_NAME} PROPERTIES
-        WIN32_EXECUTABLE FALSE  # Console app for now, change to TRUE for GUI
+        WIN32_EXECUTABLE FALSE  # Console app
+    )
+    set_target_properties(${PROJECT_NAME}_GUI PROPERTIES
+        WIN32_EXECUTABLE TRUE   # GUI app (no console)
     )
 endif()
 

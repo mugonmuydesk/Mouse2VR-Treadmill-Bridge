@@ -35,6 +35,7 @@ jobs:
         name: Mouse2VR-${{ matrix.config }}
         path: |
           build/bin/${{ matrix.config }}/Mouse2VR.exe
+          build/bin/${{ matrix.config }}/Mouse2VR_GUI.exe
           build/bin/${{ matrix.config }}/*.dll
           
   create-release:

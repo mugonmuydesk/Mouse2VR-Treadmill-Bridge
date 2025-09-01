@@ -19,7 +19,7 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
                      Mouse2VR::InputProcessor* processor,
                      Mouse2VR::ConfigManager* configManager) {
     
-    const auto config = configManager->GetConfig();  // Get copy, not reference
+    auto config = configManager->GetConfig();  // Get copy, not reference
     
     // Main loop timing
     auto lastUpdate = std::chrono::steady_clock::now();
@@ -41,7 +41,7 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
         auto elapsed = std::chrono::duration<float>(now - lastUpdate).count();
         
         // Reload config for dynamic updates
-        const auto currentConfig = configManager->GetConfig();
+        auto currentConfig = configManager->GetConfig();  // Copy, not reference
         updateInterval = std::chrono::milliseconds(currentConfig.updateIntervalMs);
         
         // Sleep for interval

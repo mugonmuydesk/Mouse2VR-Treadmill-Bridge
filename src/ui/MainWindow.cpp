@@ -253,6 +253,11 @@ int MainWindow::Run() {
 }
 
 void MainWindow::UpdateStatus(const MouseDelta& delta, float speed, float stickPercent, float updateRate) {
+    // Guard against calling before controls are created
+    if (!m_statusText || !m_graphArea || !m_stickArea) {
+        return;  // Controls not ready yet
+    }
+    
     std::lock_guard<std::mutex> lock(m_dataMutex);
     
     // Update current values

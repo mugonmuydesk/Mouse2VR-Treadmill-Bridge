@@ -1,0 +1,22 @@
+{
+    "debug": {
+        "logFilePath": "mouse2vr.log",
+        "logToFile": false,
+        "showDebugInfo": true
+    },
+    "processing": {
+        "countsPerMeter": 1000.0,
+        "deadzone": 0.0,
+        "invertX": false,
+        "invertY": false,
+        "lockX": true,
+        "lockY": false,
+        "maxSpeed": 1.0,
+        "sensitivity": 1.0
+    },
+    "update": {
+        "adaptiveMode": false,
+        "idleUpdateIntervalMs": 33,
+        "updateIntervalMs": 20
+    }
+}

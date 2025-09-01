@@ -94,11 +94,28 @@ void ProcessingThread(Mouse2VR::MainWindow* window,
 }
 
 int RunApplication(HINSTANCE hInstance) {
+    // Show debug message
+    MessageBox(nullptr, "Starting Mouse2VR GUI initialization...", "Debug", MB_OK);
+    
     // Load configuration
     Mouse2VR::ConfigManager configManager("config.json");
     if (!configManager.Load()) {
         MessageBox(nullptr, "Created default configuration file", "Mouse2VR", MB_OK | MB_ICONINFORMATION);
     }
+    
+    // Create and initialize window FIRST - before any other components
+    Mouse2VR::MainWindow window;
+    if (!window.Initialize(hInstance)) {
+        DWORD error = GetLastError();
+        char msg[256];
+        sprintf_s(msg, "Failed to create window. Error code: %lu", error);
+        MessageBox(nullptr, msg, "Window Creation Error", MB_OK | MB_ICONERROR);
+        return 1;
+    }
+    
+    // Show window immediately so user sees something
+    window.Show();
+    MessageBox(nullptr, "Window shown, initializing components...", "Debug", MB_OK);
     
     // Initialize components
     Mouse2VR::RawInputHandler inputHandler;
@@ -111,7 +128,9 @@ int RunApplication(HINSTANCE hInstance) {
         return 1;
     }
     
-    // Initialize ViGEm controller
+    MessageBox(nullptr, "Raw Input initialized, initializing ViGEm...", "Debug", MB_OK);
+    
+    // Initialize ViGEm controller - THIS MIGHT BE HANGING
     if (!controller.Initialize()) {
         MessageBox(nullptr, 
                   "Failed to initialize virtual controller.\nMake sure ViGEmBus is installed.",
@@ -119,24 +138,13 @@ int RunApplication(HINSTANCE hInstance) {
         return 1;
     }
     
+    MessageBox(nullptr, "ViGEm initialized successfully!", "Debug", MB_OK);
+    
     // Configure processor
     processor.SetConfig(configManager.GetConfig().toProcessingConfig());
     
-    // Create and initialize window
-    Mouse2VR::MainWindow window;
-    if (!window.Initialize(hInstance)) {
-        DWORD error = GetLastError();
-        char msg[256];
-        sprintf_s(msg, "Failed to create window. Error code: %lu", error);
-        MessageBox(nullptr, msg, "Window Creation Error", MB_OK | MB_ICONERROR);
-        return 1;
-    }
-    
     // Set components
     window.SetComponents(&inputHandler, &controller, &processor, &configManager);
-    
-    // Show window first
-    window.Show();
     
     // NOW start processing thread after everything is initialized
     std::thread processingThread(ProcessingThread, &window, &inputHandler, 

@@ -85,7 +85,7 @@ if(BUILD_WEBVIEW)
     FetchContent_Declare(
         webview2
         URL https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.2210.55
-        URL_HASH SHA256=0d4d2c8c1f8e2b1c3b8e5c8a1f8e2b1c3b8e5c8a1f8e2b1c3b8e5c8a1f8e2b1c3
+        URL_HASH SHA256=c0945ddfe38272f10f24673a1cb07b54b018f614eec85d3e830628369039ad3d
     )
     FetchContent_MakeAvailable(webview2)
     

@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <string>
 #include <fstream>
 #include <mutex>
@@ -7,10 +12,6 @@
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 namespace Mouse2VR {
 

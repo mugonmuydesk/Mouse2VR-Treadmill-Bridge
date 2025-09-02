@@ -81,14 +81,24 @@ endif()
 
 # WebView2 application
 if(BUILD_WEBVIEW)
-    # Download WebView2 if not present
+    # Download WebView2 and WIL if not present
     include(FetchContent)
+    
+    # WebView2 SDK
     FetchContent_Declare(
         webview2
         URL https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.2210.55
         URL_HASH SHA256=c0945ddfe38272f10f24673a1cb07b54b018f614eec85d3e830628369039ad3d
     )
-    FetchContent_MakeAvailable(webview2)
+    
+    # Windows Implementation Library (WIL)
+    FetchContent_Declare(
+        wil
+        URL https://www.nuget.org/api/v2/package/Microsoft.Windows.ImplementationLibrary/1.0.231028.1
+        URL_HASH SHA256=22ad38d9ad01b7a6ec3a02a83e6f5ff9a9a2e9b8a6e2a8d27cfdbf8a9c8a4e7f
+    )
+    
+    FetchContent_MakeAvailable(webview2 wil)
     
     add_executable(Mouse2VR_WebView WIN32
         src/webview/main.cpp
@@ -100,6 +110,7 @@ if(BUILD_WEBVIEW)
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_SOURCE_DIR}/src/webview
         ${webview2_SOURCE_DIR}/build/native/include
+        ${wil_SOURCE_DIR}/include
     )
     
     target_link_libraries(Mouse2VR_WebView PRIVATE

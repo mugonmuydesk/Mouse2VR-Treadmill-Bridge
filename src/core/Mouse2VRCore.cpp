@@ -1,6 +1,7 @@
 #include "core/Mouse2VRCore.h"
 #include "common/Logger.h"
 #include <thread>
+#include <chrono>
 
 namespace Mouse2VR {
 

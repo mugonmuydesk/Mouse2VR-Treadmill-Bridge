@@ -1,6 +1,7 @@
 #pragma once
 #include <memory>
 #include <atomic>
+#include <mutex>
 
 namespace Mouse2VR {
 

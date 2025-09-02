@@ -1,5 +1,5 @@
+#include "common/Logger.h"  // Must be first - includes Windows.h
 #include "SystemTray.h"
-#include "common/Logger.h"
 #include <strsafe.h>
 
 SystemTray::SystemTray() 

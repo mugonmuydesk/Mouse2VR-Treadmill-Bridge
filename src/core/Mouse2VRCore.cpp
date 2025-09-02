@@ -1,5 +1,5 @@
+#include "common/Logger.h"  // Must be first - includes Windows.h
 #include "core/Mouse2VRCore.h"
-#include "common/Logger.h"
 #include <thread>
 #include <chrono>
 

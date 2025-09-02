@@ -214,17 +214,17 @@ private:
         GetCursorPos(&pt);
         
         HMENU menu = CreatePopupMenu();
-        AppendMenu(menu, MF_STRING, ID_TRAY_OPEN, L"Open");
-        AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
+        AppendMenuW(menu, MF_STRING, ID_TRAY_OPEN, L"Open");
+        AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
         
         if (m_core->IsRunning()) {
-            AppendMenu(menu, MF_STRING, ID_TRAY_STOP, L"Stop");
+            AppendMenuW(menu, MF_STRING, ID_TRAY_STOP, L"Stop");
         } else {
-            AppendMenu(menu, MF_STRING, ID_TRAY_START, L"Start");
+            AppendMenuW(menu, MF_STRING, ID_TRAY_START, L"Start");
         }
         
-        AppendMenu(menu, MF_SEPARATOR, 0, nullptr);
-        AppendMenu(menu, MF_STRING, ID_TRAY_EXIT, L"Exit");
+        AppendMenuW(menu, MF_SEPARATOR, 0, nullptr);
+        AppendMenuW(menu, MF_STRING, ID_TRAY_EXIT, L"Exit");
         
         SetForegroundWindow(m_hwnd);
         

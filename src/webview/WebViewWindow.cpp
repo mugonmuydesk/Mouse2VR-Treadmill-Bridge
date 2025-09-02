@@ -169,7 +169,7 @@ void WebViewWindow::RegisterEventHandlers() {
         Callback<ICoreWebView2WebMessageReceivedEventHandler>(
             [this](ICoreWebView2* sender, ICoreWebView2WebMessageReceivedEventArgs* args) -> HRESULT {
                 wil::unique_cotaskmem_string message;
-                args->get_WebMessageAsString(&message);
+                args->TryGetWebMessageAsString(&message);
                 
                 // Parse and handle message
                 std::wstring msg(message.get());
@@ -193,7 +193,7 @@ void WebViewWindow::RegisterEventHandlers() {
 
 void WebViewWindow::InjectInitialScript() {
     // Inject JavaScript API for communication
-    std::wstring script = LR"(
+    std::wstring script = LR"JS(
         window.mouse2vr = {
             setSensitivity: function(value) {
                 window.chrome.webview.postMessage('setSensitivity:' + value);
@@ -210,7 +210,7 @@ void WebViewWindow::InjectInitialScript() {
         };
         
         console.log('Mouse2VR API injected');
-    )";
+    )JS";
     
     ExecuteScript(script);
 }
@@ -222,7 +222,7 @@ void WebViewWindow::SetupJavaScriptBridge() {
 
 std::wstring WebViewWindow::GetEmbeddedHTML() {
     // For now, return embedded HTML. Later this can load from resources
-    return LR"(
+    return LR"HTML(
 <!DOCTYPE html>
 <html>
 <head>
@@ -437,5 +437,5 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
     </script>
 </body>
 </html>
-    )";
+    )HTML";
 }

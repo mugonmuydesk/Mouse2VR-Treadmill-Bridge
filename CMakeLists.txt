@@ -49,8 +49,6 @@ target_link_libraries(Mouse2VRCore PUBLIC
 )
 
 target_compile_definitions(Mouse2VRCore PUBLIC
-    WIN32_LEAN_AND_MEAN
-    NOMINMAX
     _CRT_SECURE_NO_WARNINGS
 )
 

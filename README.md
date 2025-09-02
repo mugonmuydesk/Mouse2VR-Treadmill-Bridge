@@ -11,7 +11,9 @@ Mouse2VR bridges the gap between physical treadmill movement and virtual reality
 - ✅ Direct ViGEm integration - Creates virtual Xbox 360 controller
 - ✅ Zero smoothing - Your treadmill provides real physics
 - ✅ High performance - 100Hz update rate
-- ✅ Simple console interface (GUI coming in v2)
+- ✅ Multiple interfaces - Console, Win32 GUI, and modern WinUI 3 (in development)
+- ✅ Modular architecture - Core library with pluggable UI frontends
+- ✅ Fixed mouse direction mapping - Forward movement works correctly
 
 ## 🔧 Physical Setup
 
@@ -78,30 +80,37 @@ cd Mouse2VR-Treadmill-Bridge
 mkdir build
 cd build
 
-# Configure
-cmake ..
+# Configure (choose your build targets)
+cmake .. -DBUILD_CONSOLE=ON -DBUILD_WIN32_GUI=ON -DBUILD_WINUI=OFF
 
 # Build
 cmake --build . --config Release
 
-# Run
+# Run console version
 ./bin/Mouse2VR.exe
+
+# Or run GUI version
+./bin/Mouse2VR_GUI.exe
 ```
 
 ## 🗺️ Roadmap
 
-### v1.0 (Current) - MVP
+### v1.0 - MVP ✅ Complete
 - [x] Raw Input mouse capture
 - [x] ViGEm virtual controller
 - [x] Basic console interface
 - [x] Fixed sensitivity
-- [ ] Config file support
+- [x] Config file support (ConfigManager implemented)
 
-### v2.0 - Enhanced UI
-- [ ] Qt-based GUI
+### v2.0 - Enhanced UI (In Progress - Current v2.3.0)
+- [x] Modular core library architecture
+- [x] Win32 GUI implementation
+- [x] WinUI 3 modern interface (in active development)
+- [x] Debug logging capabilities
+- [x] Fixed mouse direction mapping
 - [ ] Live input visualization
-- [ ] Stick position preview
-- [ ] Settings panel
+- [ ] Stick position preview (partially implemented)
+- [ ] Settings panel (in progress)
 - [ ] Calibration wizard
 
 ### v3.0 - Advanced Features
@@ -125,9 +134,12 @@ Contributions are welcome! Please feel free to submit pull requests.
 ## 📝 Technical Details
 
 ### Architecture
-- **Input Layer**: Windows Raw Input API for unrestricted mouse capture
-- **Processing Layer**: Configurable scaling and axis mapping
-- **Output Layer**: ViGEmBus for virtual Xbox 360 controller
+- **Core Library**: `Mouse2VRCore` - Modular design with separated components
+- **Input Layer**: Windows Raw Input API for unrestricted mouse capture (`RawInputHandler`)
+- **Processing Layer**: Configurable scaling and axis mapping (`InputProcessor`)
+- **Configuration**: JSON-based settings management (`ConfigManager`)
+- **Output Layer**: ViGEmBus for virtual Xbox 360 controller (`ViGEmController`)
+- **UI Options**: Console, Win32 GUI, and WinUI 3 frontends
 - **Update Rate**: 100Hz (10ms intervals)
 
 ### Why Raw Input?
@@ -145,8 +157,8 @@ Traditional mouse input is limited by screen boundaries. When the cursor hits th
 - Ensure mouse sensor can read treadmill belt
 
 ### "Movement is reversed"
-- Will add axis inversion in config (coming soon)
-- For now, physically reverse mouse orientation
+- Fixed in latest version - forward mouse movement now correctly moves character forward
+- Axis inversion available through configuration if needed
 
 ## 📄 License
 

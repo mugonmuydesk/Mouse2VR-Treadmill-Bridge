@@ -23,7 +23,7 @@ jobs:
       uses: lukka/get-cmake@latest
       
     - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }}
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_CONSOLE=ON -DBUILD_WINUI=ON
       
     - name: Build
       run: cmake --build build --config ${{ matrix.config }}
@@ -35,55 +35,6 @@ jobs:
         name: Mouse2VR-${{ matrix.config }}
         path: |
           build/bin/${{ matrix.config }}/Mouse2VR.exe
-          build/bin/${{ matrix.config }}/Mouse2VR_GUI.exe
+          build/bin/${{ matrix.config }}/Mouse2VR_WinUI.exe
           build/bin/${{ matrix.config }}/*.dll
-          
-  # Automatic releases disabled - create releases manually via GitHub UI
-  # To re-enable: 
-  # 1. Go to Settings > Actions > Workflow permissions
-  # 2. Enable "Read and write permissions"
-  # 3. Uncomment the section below
-  
-  # create-release:
-  #   needs: build-windows
-  #   runs-on: ubuntu-latest
-  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-  #   
-  #   steps:
-  #   - uses: actions/checkout@v4
-  #   
-  #   - name: Download artifacts
-  #     uses: actions/download-artifact@v4
-  #     with:
-  #       name: Mouse2VR-Release
-  #       path: release-files
-  #       
-  #   - name: Create Release Package
-  #     run: |
-  #       cd release-files
-  #       zip -r ../Mouse2VR-Release.zip *
-  #       
-  #   - name: Get version
-  #     id: version
-  #     run: echo "version=$(date +'%Y.%m.%d')" >> $GITHUB_OUTPUT
-  #     
-  #   - name: Create Release
-  #     uses: softprops/action-gh-release@v1
-  #     with:
-  #       tag_name: v${{ steps.version.outputs.version }}
-  #       name: Release ${{ steps.version.outputs.version }}
-  #       draft: false
-  #       prerelease: false
-  #       files: Mouse2VR-Release.zip
-  #       body: |
-  #         ## Mouse2VR Release
-  #         
-  #         ### Installation
-  #         1. Download and extract Mouse2VR-Release.zip
-  #         2. Install ViGEmBus driver if not already installed
-  #         3. Run Mouse2VR.exe
-  #         
-  #         ### Changes
-  #         See [commit history](https://github.com/${{ github.repository }}/commits/main) for details.
-  #     env:
-  #       GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          build/bin/${{ matrix.config }}/resources.pri

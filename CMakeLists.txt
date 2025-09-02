@@ -16,8 +16,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Options
 option(BUILD_CONSOLE "Build console application" ON)
-option(BUILD_WIN32_GUI "Build Win32 GUI application" ON)
-option(BUILD_WINUI "Build WinUI 3 GUI application" OFF)
+option(BUILD_WINUI "Build WinUI 3 GUI application" ON)
 
 # Add subdirectories
 add_subdirectory(external)
@@ -72,56 +71,25 @@ if(BUILD_CONSOLE)
     )
 endif()
 
-# Win32 GUI application (legacy - to be replaced by WinUI)
-if(BUILD_WIN32_GUI)
-    add_executable(Mouse2VR_GUI WIN32
-        src/main_gui.cpp
-        src/ui/MainWindow.cpp
-        src/Mouse2VR_GUI.manifest
-    )
-    
-    target_include_directories(Mouse2VR_GUI PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/ViGEmClient/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/json/single_include
-    )
-    
-    target_link_libraries(Mouse2VR_GUI PRIVATE
-        Mouse2VRCore
-        comctl32
-        shell32
-        user32
-        gdi32
-    )
-    
-    target_compile_definitions(Mouse2VR_GUI PRIVATE
-        _WINDOWS
-    )
-    
-    # Copy ViGEmClient DLL to output directory
-    add_custom_command(TARGET Mouse2VR_GUI POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_FILE:ViGEmClient>
-            $<TARGET_FILE_DIR:Mouse2VR_GUI>
-    )
-endif()
-
-# WinUI 3 application (new)
+# WinUI 3 application
 if(BUILD_WINUI)
-    message(STATUS "Building WinUI 3 application")
     add_subdirectory(src/winui)
 endif()
 
-# Install rules
+# Installation
+install(TARGETS Mouse2VRCore
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib
+)
+
 if(BUILD_CONSOLE)
     install(TARGETS Mouse2VR
         RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
     )
 endif()
 
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/config.json 
-    DESTINATION bin 
-    OPTIONAL
+# Copy runtime dependencies
+install(FILES $<TARGET_FILE:ViGEmClient>
+    DESTINATION bin
 )

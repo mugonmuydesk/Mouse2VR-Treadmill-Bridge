@@ -1,13 +1,5 @@
 #pragma once
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#undef WIN32_LEAN_AND_MEAN
-#undef NOMINMAX
-#endif
-
 #include <string>
 #include <fstream>
 #include <mutex>
@@ -16,6 +8,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
+#include "common/WindowsHeaders.h"  // Include Windows.h safely
 
 namespace Mouse2VR {
 

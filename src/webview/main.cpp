@@ -1,4 +1,4 @@
-#include <windows.h>
+#include "common/WindowsHeaders.h"
 #include <shellapi.h>
 #include <wrl.h>
 #include <wil/com.h>

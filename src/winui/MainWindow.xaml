@@ -5,118 +5,260 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Mouse2VR Treadmill Bridge - WinUI 3">
+        Title="Mouse2VR Treadmill Bridge">
 
-    <Grid Margin="20">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+    <Window.Resources>
+        <!-- Fluent Design System Styles based on HTML mockup specs -->
+        <Style x:Key="FluentCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="16,12"/>
+        </Style>
+        
+        <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="Margin" Value="4,16,0,8"/>
+        </Style>
+        
+        <Style x:Key="MetricLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="LineHeight" Value="16"/>
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,2"/>
+        </Style>
+        
+        <Style x:Key="MetricValueStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="LineHeight" Value="24"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}"/>
+        </Style>
 
-        <!-- Title -->
-        <TextBlock Grid.Row="0" 
-                   Text="Mouse2VR Treadmill Bridge" 
-                   Style="{StaticResource TitleTextBlockStyle}"
-                   HorizontalAlignment="Center"
-                   Margin="0,0,0,20"/>
+        <Style x:Key="ChartDescriptionStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="LineHeight" Value="18"/>
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        
+        <Style x:Key="SettingLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="LineHeight" Value="20"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,16,0"/>
+        </Style>
+    </Window.Resources>
 
-        <!-- Main Content -->
-        <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="200"/>
-            </Grid.ColumnDefinitions>
+    <Grid Background="{ThemeResource LayerFillColorDefaultBrush}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <Grid MaxWidth="800" Margin="40,24" HorizontalAlignment="Stretch">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
 
-            <!-- Status Panel -->
-            <StackPanel Grid.Column="0" Spacing="10">
-                <TextBlock Text="Status" Style="{StaticResource SubtitleTextBlockStyle}"/>
-                <Border BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" 
-                        BorderThickness="1" 
-                        Padding="10"
-                        CornerRadius="4">
-                    <StackPanel Spacing="5">
-                        <TextBlock x:Name="StatusText" Text="Status: Initializing..."/>
-                        <TextBlock x:Name="SpeedText" Text="Speed: 0.0 m/s"/>
-                        <TextBlock x:Name="StickText" Text="Stick: 0%"/>
-                        <TextBlock x:Name="UpdateRateText" Text="Update Rate: 0 Hz"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+                <!-- Title -->
+                <TextBlock Grid.Row="0" 
+                           Text="Mouse2VR Treadmill Bridge" 
+                           FontSize="28"
+                           LineHeight="36"
+                           FontWeight="Normal"
+                           Margin="0,0,0,24"/>
 
-            <!-- Input Graph -->
-            <Border Grid.Column="1" 
-                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" 
-                    BorderThickness="1"
-                    Margin="10,30,10,0"
-                    CornerRadius="4">
-                <Canvas x:Name="GraphCanvas" Background="Black"/>
-            </Border>
-
-            <!-- Stick Position -->
-            <Border Grid.Column="2" 
-                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}" 
-                    BorderThickness="1"
-                    Margin="0,30,0,0"
-                    CornerRadius="4">
-                <Canvas x:Name="StickCanvas" Background="DarkGray"/>
-            </Border>
-        </Grid>
-
-        <!-- Settings -->
-        <Expander Grid.Row="2" 
-                  Header="Settings" 
-                  Margin="0,20,0,0"
-                  HorizontalAlignment="Stretch"
-                  HorizontalContentAlignment="Stretch">
-            <StackPanel Spacing="15" Margin="0,10,0,0">
-                <!-- Sensitivity -->
-                <Grid>
+                <!-- Performance Metrics and Stick Position Side by Side -->
+                <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120"/>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Sensitivity:" VerticalAlignment="Center"/>
-                    <Slider Grid.Column="1" 
-                            x:Name="SensitivitySlider" 
-                            Minimum="0.1" 
-                            Maximum="3.0" 
-                            Value="1.0"
-                            StepFrequency="0.1"
-                            Margin="10,0"/>
-                    <TextBox Grid.Column="2" 
-                             x:Name="SensitivityValue" 
-                             Text="{x:Bind SensitivitySlider.Value, Mode=TwoWay}"
-                             IsReadOnly="True"/>
+
+                    <!-- Performance Metrics Card -->
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Performance Metrics" Style="{StaticResource SectionLabelStyle}"/>
+                        <Border Style="{StaticResource FluentCardStyle}">
+                            <StackPanel Spacing="12">
+                                <!-- Status -->
+                                <StackPanel>
+                                    <TextBlock Text="Status" Style="{StaticResource MetricLabelStyle}"/>
+                                    <TextBlock x:Name="StatusText" Text="Running" Style="{StaticResource MetricValueStyle}"/>
+                                </StackPanel>
+                                <!-- Speed -->
+                                <StackPanel>
+                                    <TextBlock Text="Speed" Style="{StaticResource MetricLabelStyle}"/>
+                                    <TextBlock x:Name="SpeedText" Text="0.00 m/s" Style="{StaticResource MetricValueStyle}"/>
+                                </StackPanel>
+                                <!-- Stick -->
+                                <StackPanel>
+                                    <TextBlock Text="Stick" Style="{StaticResource MetricLabelStyle}"/>
+                                    <TextBlock x:Name="StickText" Text="0%" Style="{StaticResource MetricValueStyle}"/>
+                                </StackPanel>
+                                <!-- Update Rate -->
+                                <StackPanel>
+                                    <TextBlock Text="Update Rate" Style="{StaticResource MetricLabelStyle}"/>
+                                    <TextBlock x:Name="UpdateRateText" Text="0 Hz" Style="{StaticResource MetricValueStyle}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <!-- Controller Stick Position Card -->
+                    <StackPanel Grid.Column="2">
+                        <TextBlock Text="Controller Stick Position" Style="{StaticResource SectionLabelStyle}"/>
+                        <Border Style="{StaticResource FluentCardStyle}" MinHeight="240">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Grid.Row="0" 
+                                           Text="Visualises treadmill movement as left stick deflection." 
+                                           Style="{StaticResource ChartDescriptionStyle}"/>
+                                <Viewbox Grid.Row="1" Stretch="Uniform" MaxHeight="180">
+                                    <Grid Width="200" Height="200">
+                                        <!-- Outer circle -->
+                                        <Ellipse Width="200" Height="200" 
+                                                 Fill="{ThemeResource ControlFillColorSecondaryBrush}"
+                                                 Stroke="{ThemeResource ControlStrokeColorDefaultBrush}"
+                                                 StrokeThickness="2"/>
+                                        <!-- Inner dashed circle -->
+                                        <Ellipse Width="180" Height="180" 
+                                                 Stroke="{ThemeResource ControlStrokeColorSecondaryBrush}"
+                                                 StrokeThickness="1"
+                                                 StrokeDashArray="2,2"/>
+                                        <!-- Center crosshair -->
+                                        <Line X1="100" Y1="90" X2="100" Y2="110"
+                                              Stroke="{ThemeResource ControlStrokeColorSecondaryBrush}"
+                                              StrokeThickness="1"/>
+                                        <Line X1="90" Y1="100" X2="110" Y2="100"
+                                              Stroke="{ThemeResource ControlStrokeColorSecondaryBrush}"
+                                              StrokeThickness="1"/>
+                                        <!-- Stick position indicator -->
+                                        <Canvas x:Name="StickCanvas" Width="200" Height="200">
+                                            <Ellipse x:Name="StickIndicator"
+                                                     Width="20" Height="20"
+                                                     Fill="{ThemeResource AccentFillColorDefaultBrush}"
+                                                     Canvas.Left="90" Canvas.Top="90"/>
+                                        </Canvas>
+                                    </Grid>
+                                </Viewbox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
                 </Grid>
 
-                <!-- Update Rate -->
-                <StackPanel>
-                    <TextBlock Text="Update Rate:" Margin="0,0,0,5"/>
-                    <RadioButtons x:Name="UpdateRateRadio" SelectedIndex="1">
-                        <RadioButton Content="30 Hz" Tag="33"/>
-                        <RadioButton Content="50 Hz" Tag="20"/>
-                        <RadioButton Content="60 Hz" Tag="16"/>
-                        <RadioButton Content="100 Hz" Tag="10"/>
-                    </RadioButtons>
+                <!-- Walking Speed Over Time -->
+                <StackPanel Grid.Row="2">
+                    <TextBlock Text="Walking Speed Over Time" Style="{StaticResource SectionLabelStyle}"/>
+                    <Border Style="{StaticResource FluentCardStyle}" MinHeight="200">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" 
+                                       Text="Shows treadmill belt speed converted into meters per second." 
+                                       Style="{StaticResource ChartDescriptionStyle}"/>
+                            <Border Grid.Row="1" 
+                                    BorderBrush="{ThemeResource ControlStrokeColorSecondaryBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="6"
+                                    Background="{ThemeResource ControlFillColorTertiaryBrush}"
+                                    MinHeight="150">
+                                <Canvas x:Name="GraphCanvas" />
+                            </Border>
+                        </Grid>
+                    </Border>
                 </StackPanel>
 
-                <!-- Options -->
-                <StackPanel Spacing="10">
-                    <CheckBox x:Name="InvertYCheck" Content="Invert Y Axis"/>
-                    <CheckBox x:Name="LockXCheck" Content="Lock X Axis" IsChecked="True"/>
-                    <CheckBox x:Name="AdaptiveCheck" Content="Adaptive Mode"/>
+                <!-- Settings Section -->
+                <StackPanel Grid.Row="3">
+                    <TextBlock Text="Settings" Style="{StaticResource SectionLabelStyle}"/>
+                    
+                    <!-- Sensitivity Setting -->
+                    <Border Style="{StaticResource FluentCardStyle}" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="60"/>
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Grid.Column="0" Glyph="&#xE9E9;" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Sensitivity" Style="{StaticResource SettingLabelStyle}" Margin="8,0,16,0"/>
+                            <Slider Grid.Column="2" 
+                                    x:Name="SensitivitySlider" 
+                                    Minimum="0.1" 
+                                    Maximum="3.0" 
+                                    Value="1.0"
+                                    StepFrequency="0.1"
+                                    VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="3" 
+                                       x:Name="SensitivityValue"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Margin="8,0,0,0"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Update Rate Setting -->
+                    <Border Style="{StaticResource FluentCardStyle}" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Grid.Column="0" Glyph="&#xE768;" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Update Rate" Style="{StaticResource SettingLabelStyle}" Margin="8,0,16,0"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+                                <RadioButton x:Name="Rate30" Content="30 Hz" Tag="33" GroupName="UpdateRate"/>
+                                <RadioButton x:Name="Rate50" Content="50 Hz" Tag="20" GroupName="UpdateRate"/>
+                                <RadioButton x:Name="Rate60" Content="60 Hz" Tag="16" GroupName="UpdateRate" IsChecked="True"/>
+                                <RadioButton x:Name="Rate100" Content="100 Hz" Tag="10" GroupName="UpdateRate"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Axis Options Setting -->
+                    <Border Style="{StaticResource FluentCardStyle}" Margin="0,0,0,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Grid.Column="0" Glyph="&#xE762;" FontSize="18" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Axis Options" Style="{StaticResource SettingLabelStyle}" Margin="8,0,16,0"/>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16">
+                                <CheckBox x:Name="InvertYCheck" Content="Invert Y Axis"/>
+                                <CheckBox x:Name="LockXCheck" Content="Lock X Axis" IsChecked="True"/>
+                                <CheckBox x:Name="AdaptiveCheck" Content="Adaptive Mode"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </StackPanel>
 
                 <!-- Apply Button -->
-                <Button x:Name="ApplyButton" 
-                        Content="Apply Settings" 
-                        Click="OnApplySettings"
-                        HorizontalAlignment="Stretch"
-                        Style="{StaticResource AccentButtonStyle}"/>
-            </StackPanel>
-        </Expander>
+                <Grid Grid.Row="4" Margin="0,16,0,0">
+                    <Button x:Name="ApplyButton" 
+                            Content="Apply Settings" 
+                            Click="OnApplySettings"
+                            HorizontalAlignment="Right"
+                            Style="{StaticResource AccentButtonStyle}"
+                            CornerRadius="20"
+                            Padding="16,8"
+                            FontWeight="SemiBold"/>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
     </Grid>
 </Window>

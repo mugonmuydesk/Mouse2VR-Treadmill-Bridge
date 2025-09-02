@@ -128,6 +128,10 @@ namespace winrt::Mouse2VR::implementation
         m_updateTimer.Interval(std::chrono::milliseconds(100));
         m_updateTimer.Tick([this](auto&&, auto&&) { UpdateStatus(); });
         m_updateTimer.Start();
+        
+        // Setup slider value display
+        SensitivitySlider().ValueChanged([this](auto&&, auto&&) { UpdateSensitivityValue(); });
+        UpdateSensitivityValue();
     }
 
     MainWindow::~MainWindow()
@@ -149,11 +153,11 @@ namespace winrt::Mouse2VR::implementation
         if (m_coreBridge->Initialize(hwnd))
         {
             m_coreBridge->Start();
-            StatusText().Text(L"Status: Running");
+            StatusText().Text(L"Running");
         }
         else
         {
-            StatusText().Text(L"Status: Failed to initialize");
+            StatusText().Text(L"Failed");
         }
     }
 
@@ -164,13 +168,13 @@ namespace winrt::Mouse2VR::implementation
         
         // Update status text
         wchar_t buffer[256];
-        swprintf_s(buffer, L"Speed: %.2f m/s", m_coreBridge->currentSpeed);
+        swprintf_s(buffer, L"%.2f m/s", m_coreBridge->currentSpeed);
         SpeedText().Text(buffer);
         
-        swprintf_s(buffer, L"Stick: %.0f%%", abs(m_coreBridge->currentStickY) * 100.0f);
+        swprintf_s(buffer, L"%.0f%%", abs(m_coreBridge->currentStickY) * 100.0f);
         StickText().Text(buffer);
         
-        swprintf_s(buffer, L"Update Rate: %.0f Hz", m_coreBridge->updateRate);
+        swprintf_s(buffer, L"%.0f Hz", m_coreBridge->updateRate);
         UpdateRateText().Text(buffer);
         
         // Update visualizations
@@ -184,16 +188,12 @@ namespace winrt::Mouse2VR::implementation
         
         float sensitivity = static_cast<float>(SensitivitySlider().Value());
         
-        // Get selected update rate
-        int updateRateMs = 20; // Default 50Hz
-        auto selectedIndex = UpdateRateRadio().SelectedIndex();
-        switch (selectedIndex)
-        {
-            case 0: updateRateMs = 33; break; // 30Hz
-            case 1: updateRateMs = 20; break; // 50Hz
-            case 2: updateRateMs = 16; break; // 60Hz
-            case 3: updateRateMs = 10; break; // 100Hz
-        }
+        // Get selected update rate from radio buttons
+        int updateRateMs = 16; // Default 60Hz
+        if (Rate30().IsChecked().Value()) updateRateMs = 33;
+        else if (Rate50().IsChecked().Value()) updateRateMs = 20;
+        else if (Rate60().IsChecked().Value()) updateRateMs = 16;
+        else if (Rate100().IsChecked().Value()) updateRateMs = 10;
         
         bool invertY = InvertYCheck().IsChecked().Value();
         bool lockX = LockXCheck().IsChecked().Value();
@@ -204,29 +204,26 @@ namespace winrt::Mouse2VR::implementation
 
     void MainWindow::DrawStickPosition(float x, float y)
     {
-        // Simple visualization - will enhance later
-        // For now, just clear the canvas
-        StickCanvas().Children().Clear();
-        
-        // Draw center dot
-        auto ellipse = Shapes::Ellipse();
-        ellipse.Width(10);
-        ellipse.Height(10);
-        ellipse.Fill(Media::SolidColorBrush(Windows::UI::ColorHelper::FromArgb(255, 255, 0, 0)));
-        
-        // Position based on stick values
-        double canvasWidth = StickCanvas().ActualWidth();
-        double canvasHeight = StickCanvas().ActualHeight();
-        
-        if (canvasWidth > 0 && canvasHeight > 0)
+        // Update the stick indicator position
+        if (StickIndicator())
         {
-            double posX = (canvasWidth / 2.0) + (x * canvasWidth / 2.0);
-            double posY = (canvasHeight / 2.0) - (y * canvasHeight / 2.0);
+            // Canvas is 200x200, indicator is 20x20
+            // Center is at 100,100, indicator offset is -10,-10 for centering
+            double posX = 100.0 + (x * 90.0) - 10.0; // 90 is max radius
+            double posY = 100.0 - (y * 90.0) - 10.0; // Invert Y for visual
             
-            Canvas::SetLeft(ellipse, posX - 5);
-            Canvas::SetTop(ellipse, posY - 5);
+            // Clamp to circle bounds
+            double dist = sqrt(x*x + y*y);
+            if (dist > 1.0f)
+            {
+                x /= dist;
+                y /= dist;
+                posX = 100.0 + (x * 90.0) - 10.0;
+                posY = 100.0 - (y * 90.0) - 10.0;
+            }
             
-            StickCanvas().Children().Append(ellipse);
+            Canvas::SetLeft(StickIndicator(), posX);
+            Canvas::SetTop(StickIndicator(), posY);
         }
     }
 
@@ -234,5 +231,12 @@ namespace winrt::Mouse2VR::implementation
     {
         // TODO: Implement graph drawing
         // For now, leave empty
+    }
+    
+    void MainWindow::UpdateSensitivityValue()
+    {
+        wchar_t buffer[16];
+        swprintf_s(buffer, L"%.1f", SensitivitySlider().Value());
+        SensitivityValue().Text(buffer);
     }
 }

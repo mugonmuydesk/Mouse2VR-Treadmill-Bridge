@@ -27,6 +27,7 @@ namespace winrt::Mouse2VR::implementation
         void UpdateStatus();
         void DrawStickPosition(float x, float y);
         void DrawInputGraph();
+        void UpdateSensitivityValue();
     };
 }
 

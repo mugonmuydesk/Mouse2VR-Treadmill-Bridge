@@ -6,6 +6,13 @@
 
 #include "core/Mouse2VRCore.h"
 #include "common/Logger.h"
+
+// Include complete type definitions for std::unique_ptr destructors
+#include "core/ConfigManager.h"
+#include "core/RawInputHandler.h"
+#include "core/ViGEmController.h"
+#include "core/InputProcessor.h"
+
 #include <thread>
 #include <chrono>
 

@@ -95,7 +95,7 @@ if(BUILD_WEBVIEW)
     FetchContent_Declare(
         wil
         URL https://www.nuget.org/api/v2/package/Microsoft.Windows.ImplementationLibrary/1.0.231028.1
-        URL_HASH SHA256=22ad38d9ad01b7a6ec3a02a83e6f5ff9a9a2e9b8a6e2a8d27cfdbf8a9c8a4e7f
+        URL_HASH SHA256=5289a21073498cb9984356a9690513efc92c21b14e3eed92c3f3eef9641e574a
     )
     
     FetchContent_MakeAvailable(webview2 wil)

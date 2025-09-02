@@ -128,6 +128,13 @@ if(BUILD_WEBVIEW)
         NOMINMAX
     )
     
+    # Copy WebView2Loader.dll to output directory for deployment
+    add_custom_command(TARGET Mouse2VR_WebView POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying WebView2 runtime files..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:Mouse2VR_WebView>
+        COMMENT "Setting up WebView2 runtime files"
+    )
+    
     # Copy ViGEmClient DLL to output directory
     add_custom_command(TARGET Mouse2VR_WebView POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

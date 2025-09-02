@@ -16,6 +16,18 @@
 
 using namespace Microsoft::WRL;
 
+// Check WebView2 availability
+bool IsWebView2Available() {
+    try {
+        // Try to get the WebView2 version - this will fail if runtime is not available
+        wil::unique_cotaskmem_string version;
+        HRESULT hr = GetAvailableCoreWebView2BrowserVersionString(nullptr, &version);
+        return SUCCEEDED(hr) && version.get() != nullptr;
+    } catch (...) {
+        return false;
+    }
+}
+
 // Application class that manages everything
 class Mouse2VRApp {
 public:
@@ -25,9 +37,26 @@ public:
     bool Initialize(HINSTANCE hInstance) {
         m_hInstance = hInstance;
         
-        // Initialize logger
-        Mouse2VR::Logger::Instance().Initialize("logs/mouse2vr.log");
-        LOG_INFO("App", "Mouse2VR WebView2 starting...");
+        // Check WebView2 availability first
+        if (!IsWebView2Available()) {
+            MessageBoxA(nullptr, 
+                       "WebView2 Runtime is not installed.\n\n"
+                       "Please install WebView2 Runtime from:\n"
+                       "https://developer.microsoft.com/en-us/microsoft-edge/webview2/\n\n"
+                       "Or run: winget install Microsoft.EdgeWebView2Runtime", 
+                       "WebView2 Runtime Missing", MB_OK | MB_ICONERROR);
+            return false;
+        }
+        
+        // Initialize logger with error handling
+        try {
+            Mouse2VR::Logger::Instance().Initialize("logs/mouse2vr.log");
+            LOG_INFO("App", "Mouse2VR WebView2 starting...");
+        } catch (const std::exception& e) {
+            MessageBoxA(nullptr, ("Failed to initialize logger: " + std::string(e.what())).c_str(), 
+                       "Mouse2VR Error", MB_OK | MB_ICONERROR);
+            return false;
+        }
         
         // Initialize core functionality
         m_core = std::make_unique<Mouse2VR::Mouse2VRCore>();
@@ -270,17 +299,35 @@ private:
 
 // Entry point
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    // Initialize COM for WebView2
-    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
-    
-    Mouse2VRApp app;
-    if (!app.Initialize(hInstance)) {
-        MessageBoxW(nullptr, L"Failed to initialize Mouse2VR", L"Error", MB_OK | MB_ICONERROR);
+    try {
+        // Initialize COM for WebView2
+        HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+        if (FAILED(hr)) {
+            MessageBoxA(nullptr, "Failed to initialize COM", "Mouse2VR Error", MB_OK | MB_ICONERROR);
+            return 1;
+        }
+        
+        Mouse2VRApp app;
+        if (!app.Initialize(hInstance)) {
+            MessageBoxW(nullptr, L"Failed to initialize Mouse2VR", L"Error", MB_OK | MB_ICONERROR);
+            CoUninitialize();
+            return 1;
+        }
+        
+        int result = app.Run();
+        
+        CoUninitialize();
+        return result;
+        
+    } catch (const std::exception& e) {
+        std::string error = "Unhandled exception: ";
+        error += e.what();
+        MessageBoxA(nullptr, error.c_str(), "Mouse2VR Fatal Error", MB_OK | MB_ICONERROR);
+        CoUninitialize();
+        return 1;
+    } catch (...) {
+        MessageBoxA(nullptr, "Unknown fatal error occurred", "Mouse2VR Fatal Error", MB_OK | MB_ICONERROR);
+        CoUninitialize();
         return 1;
     }
-    
-    int result = app.Run();
-    
-    CoUninitialize();
-    return result;
 }

@@ -8,7 +8,7 @@
 #include <filesystem>
 #include <iomanip>
 #include <iostream>
-#include "common/WindowsHeaders.h"  // Include Windows.h safely
+// Windows.h removed - no longer needed in header
 
 namespace Mouse2VR {
 
@@ -21,10 +21,7 @@ public:
         ERROR_LEVEL  // Renamed from ERROR to avoid Windows.h macro conflict
     };
 
-    static Logger& Instance() {
-        static Logger instance;
-        return instance;
-    }
+    static Logger& Instance(); // Moved to Logger.cpp
 
     void Initialize(const std::string& logPath = "logs/debug.log") {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -70,7 +67,7 @@ public:
         // Output to debug console in Debug builds
         #ifdef _DEBUG
         #ifdef _WIN32
-        OutputDebugStringA((logLine + "\n").c_str());
+        OutputToDebugger(logLine);
         #endif
         #endif
     }
@@ -116,6 +113,12 @@ private:
 
     std::ofstream m_file;
     std::mutex m_mutex;
+    
+    #ifdef _DEBUG
+    #ifdef _WIN32
+    void OutputToDebugger(const std::string& msg);
+    #endif
+    #endif
     
     std::string GetTimestamp() {
         auto now = std::chrono::system_clock::now();

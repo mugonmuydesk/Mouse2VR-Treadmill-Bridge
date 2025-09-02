@@ -28,6 +28,7 @@ find_package(Threads REQUIRED)
 # Core library
 add_library(Mouse2VRCore STATIC
     src/core/Mouse2VRCore.cpp
+    src/core/Logger.cpp
     src/core/RawInputHandler.cpp
     src/core/ViGEmController.cpp
     src/core/InputProcessor.cpp

@@ -1,11 +1,14 @@
+// STL headers first - MUST come before Windows headers
+#include <string>
+#include <memory>
+#include <filesystem>
+
+// Then Windows-specific headers
 #include "common/WindowsHeaders.h"
 #include <shellapi.h>
 #include <wrl.h>
 #include <wil/com.h>
 #include <WebView2.h>
-#include <string>
-#include <memory>
-#include <filesystem>
 #include "SystemTray.h"
 #include "WebViewWindow.h"
 #include "core/Mouse2VRCore.h"

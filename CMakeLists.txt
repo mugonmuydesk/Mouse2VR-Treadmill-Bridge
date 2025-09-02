@@ -16,7 +16,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Options
 option(BUILD_CONSOLE "Build console application" ON)
-option(BUILD_WINUI "Build WinUI 3 GUI application" ON)
+option(BUILD_WINUI "Build WinUI 3 GUI application" OFF)
+option(BUILD_WEBVIEW "Build WebView2 application" ON)
 
 # Add subdirectories
 add_subdirectory(external)
@@ -26,6 +27,7 @@ find_package(Threads REQUIRED)
 
 # Core library
 add_library(Mouse2VRCore STATIC
+    src/core/Mouse2VRCore.cpp
     src/core/RawInputHandler.cpp
     src/core/ViGEmController.cpp
     src/core/InputProcessor.cpp
@@ -74,6 +76,52 @@ endif()
 # WinUI 3 application
 if(BUILD_WINUI)
     add_subdirectory(src/winui)
+endif()
+
+# WebView2 application
+if(BUILD_WEBVIEW)
+    # Download WebView2 if not present
+    include(FetchContent)
+    FetchContent_Declare(
+        webview2
+        URL https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.2210.55
+        URL_HASH SHA256=0d4d2c8c1f8e2b1c3b8e5c8a1f8e2b1c3b8e5c8a1f8e2b1c3b8e5c8a1f8e2b1c3
+    )
+    FetchContent_MakeAvailable(webview2)
+    
+    add_executable(Mouse2VR_WebView WIN32
+        src/webview/main.cpp
+        src/webview/SystemTray.cpp
+        src/webview/WebViewWindow.cpp
+    )
+    
+    target_include_directories(Mouse2VR_WebView PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/webview
+        ${webview2_SOURCE_DIR}/build/native/include
+    )
+    
+    target_link_libraries(Mouse2VR_WebView PRIVATE
+        Mouse2VRCore
+        ${webview2_SOURCE_DIR}/build/native/x64/WebView2LoaderStatic.lib
+        shell32
+        ole32
+        oleaut32
+        uuid
+        shlwapi
+    )
+    
+    target_compile_definitions(Mouse2VR_WebView PRIVATE
+        WIN32_LEAN_AND_MEAN
+        NOMINMAX
+    )
+    
+    # Copy ViGEmClient DLL to output directory
+    add_custom_command(TARGET Mouse2VR_WebView POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:ViGEmClient>
+            $<TARGET_FILE_DIR:Mouse2VR_WebView>
+    )
 endif()
 
 # Installation

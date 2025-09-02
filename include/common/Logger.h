@@ -6,6 +6,8 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #undef NOMINMAX
+// Windows.h defines ERROR as a macro, which conflicts with our enum
+#undef ERROR
 #endif
 
 #include <string>

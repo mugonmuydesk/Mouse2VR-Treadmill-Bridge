@@ -37,14 +37,12 @@ jobs:
     
     # Build WinUI using MSBuild
     - name: Restore NuGet packages for WinUI
-      run: |
-        cd src/winui
-        nuget restore packages.config -PackagesDirectory packages
+      working-directory: src/winui
+      run: nuget restore packages.config -PackagesDirectory packages
     
     - name: Build WinUI Application
-      run: |
-        cd src/winui
-        msbuild Mouse2VR_WinUI.vcxproj /p:Configuration=${{ matrix.config }} /p:Platform=x64 /p:OutDir=${{ github.workspace }}\build\bin\${{ matrix.config }}\ /p:IntDir=${{ github.workspace }}\build\obj\winui\
+      working-directory: src/winui
+      run: msbuild Mouse2VR_WinUI.vcxproj /p:Configuration=${{ matrix.config }} /p:Platform=x64 /p:OutDir=${{ github.workspace }}\build\bin\${{ matrix.config }}\ /p:IntDir=${{ github.workspace }}\build\obj\winui\
     
     - name: Copy WinUI dependencies
       if: matrix.config == 'Release'

@@ -21,12 +21,43 @@ jobs:
         
     - name: Setup CMake
       uses: lukka/get-cmake@latest
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
       
-    - name: Configure CMake
-      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_CONSOLE=ON -DBUILD_WINUI=ON
+    # Build Core and Console using CMake
+    - name: Configure CMake (Core and Console)
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{ matrix.config }} -DBUILD_CONSOLE=ON -DBUILD_WINUI=OFF
       
-    - name: Build
+    - name: Build Core and Console
       run: cmake --build build --config ${{ matrix.config }}
+    
+    # Build WinUI using MSBuild
+    - name: Restore NuGet packages for WinUI
+      run: |
+        cd src/winui
+        nuget restore packages.config -PackagesDirectory packages
+    
+    - name: Build WinUI Application
+      run: |
+        cd src/winui
+        msbuild Mouse2VR_WinUI.vcxproj /p:Configuration=${{ matrix.config }} /p:Platform=x64 /p:OutDir=${{ github.workspace }}\build\bin\${{ matrix.config }}\ /p:IntDir=${{ github.workspace }}\build\obj\winui\
+    
+    - name: Copy WinUI dependencies
+      if: matrix.config == 'Release'
+      run: |
+        $outputDir = "${{ github.workspace }}\build\bin\${{ matrix.config }}"
+        
+        # Copy Windows App SDK runtime
+        Copy-Item "src\winui\packages\Microsoft.WindowsAppSDK.*\runtimes\win-x64\native\*.dll" -Destination $outputDir -Force -ErrorAction SilentlyContinue
+        
+        # Copy ViGEmClient DLL
+        if (Test-Path "build\bin\${{ matrix.config }}\ViGEmClient.dll") {
+          Copy-Item "build\bin\${{ matrix.config }}\ViGEmClient.dll" -Destination $outputDir -Force
+        }
       
     - name: Upload Artifacts
       if: matrix.config == 'Release'

@@ -65,3 +65,5 @@ private:
     void ProcessingLoop();
     void UpdateController();
 };
+
+} // namespace Mouse2VR

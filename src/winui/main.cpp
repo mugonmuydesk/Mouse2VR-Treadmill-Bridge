@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "App.xaml.h"
 
 #include <winrt/Microsoft.UI.Xaml.h>
 

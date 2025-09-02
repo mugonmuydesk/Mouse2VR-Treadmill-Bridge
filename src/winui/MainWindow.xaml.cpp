@@ -30,9 +30,17 @@ namespace winrt::Mouse2VR::implementation
         std::thread workerThread;
         std::atomic<bool> running{false};
         
-        float currentSpeed = 0.0f;
-        float currentStickY = 0.0f;
-        float updateRate = 0.0f;
+        // Thread-safe shared state
+        std::atomic<float> currentSpeed{0.0f};
+        std::atomic<float> currentStickY{0.0f};
+        std::atomic<float> updateRate{0.0f};
+        std::atomic<int> updateIntervalMs{20}; // default 50Hz
+        
+        // RAII cleanup
+        ~CoreBridge()
+        {
+            Stop(); // ensures thread joins if still running
+        }
         
         bool Initialize(HWND hwnd)
         {
@@ -92,7 +100,7 @@ namespace winrt::Mouse2VR::implementation
                     }
                     
                     lastUpdate = now;
-                    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(updateIntervalMs.load()));
                 }
             });
         }
@@ -112,6 +120,9 @@ namespace winrt::Mouse2VR::implementation
             config.invertY = invertY;
             config.lockX = lockX;
             config.adaptiveMode = adaptive;
+            
+            // Store the update interval for the worker thread
+            updateIntervalMs = updateRateMs;
             
             configManager->SetConfig(config);
             processor->SetConfig(config.toProcessingConfig());
@@ -146,8 +157,21 @@ namespace winrt::Mouse2VR::implementation
     {
         // Get the native window handle using WinUI 3 approach
         HWND hwnd = nullptr;
-        auto windowNative = this->as<IWindowNative>();
-        windowNative->get_WindowHandle(&hwnd);
+        auto windowNative = this->try_as<IWindowNative>();
+        if (windowNative)
+        {
+            windowNative->get_WindowHandle(&hwnd);
+        }
+        else
+        {
+            // Fallback method for WinUI 3
+            auto window = Microsoft::UI::Xaml::Window::Current();
+            if (window)
+            {
+                auto windowId = Microsoft::UI::GetWindowIdFromWindow(GetActiveWindow());
+                hwnd = GetActiveWindow();
+            }
+        }
         
         m_coreBridge = std::make_unique<CoreBridge>();
         if (m_coreBridge->Initialize(hwnd))
@@ -157,7 +181,7 @@ namespace winrt::Mouse2VR::implementation
         }
         else
         {
-            StatusText().Text(L"Failed");
+            StatusText().Text(L"Failed to initialize - Check ViGEmBus driver");
         }
     }
 
@@ -166,19 +190,19 @@ namespace winrt::Mouse2VR::implementation
         if (!m_coreBridge)
             return;
         
-        // Update status text
+        // Update status text with thread-safe loads
         wchar_t buffer[256];
-        swprintf_s(buffer, L"%.2f m/s", m_coreBridge->currentSpeed);
+        swprintf_s(buffer, L"%.2f m/s", m_coreBridge->currentSpeed.load());
         SpeedText().Text(buffer);
         
-        swprintf_s(buffer, L"%.0f%%", abs(m_coreBridge->currentStickY) * 100.0f);
+        swprintf_s(buffer, L"%.0f%%", abs(m_coreBridge->currentStickY.load()) * 100.0f);
         StickText().Text(buffer);
         
-        swprintf_s(buffer, L"%.0f Hz", m_coreBridge->updateRate);
+        swprintf_s(buffer, L"%.0f Hz", m_coreBridge->updateRate.load());
         UpdateRateText().Text(buffer);
         
         // Update visualizations
-        DrawStickPosition(0.0f, m_coreBridge->currentStickY);
+        DrawStickPosition(0.0f, m_coreBridge->currentStickY.load());
     }
 
     void MainWindow::OnApplySettings(IInspectable const&, RoutedEventArgs const&)

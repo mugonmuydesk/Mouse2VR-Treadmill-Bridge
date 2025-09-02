@@ -1,7 +1,7 @@
 #pragma once
-#include <windows.h>
-#include <ViGEm/Client.h>
 #include <memory>
+#include "common/WindowsHeaders.h"
+#include <ViGEm/Client.h>
 
 namespace Mouse2VR {
 

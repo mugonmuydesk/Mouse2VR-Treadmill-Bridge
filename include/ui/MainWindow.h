@@ -1,13 +1,10 @@
 #pragma once
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
 #include <string>
 #include <atomic>
 #include <memory>
 #include <deque>
 #include <mutex>
+#include "common/WindowsHeaders.h"
 
 namespace Mouse2VR {
 

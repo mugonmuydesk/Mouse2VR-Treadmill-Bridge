@@ -6,8 +6,6 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #undef NOMINMAX
-// Windows.h defines ERROR as a macro, which conflicts with our enum
-#undef ERROR
 #endif
 
 #include <string>
@@ -27,7 +25,7 @@ public:
         DEBUG,
         INFO,
         WARNING,
-        ERROR
+        ERROR_LEVEL  // Renamed from ERROR to avoid Windows.h macro conflict
     };
 
     static Logger& Instance() {
@@ -143,7 +141,7 @@ private:
             case DEBUG: return "DEBUG";
             case INFO: return "INFO";
             case WARNING: return "WARN";
-            case ERROR: return "ERROR";
+            case ERROR_LEVEL: return "ERROR";
         }
         return "UNKNOWN";
     }
@@ -153,7 +151,7 @@ private:
 #define LOG_DEBUG(component, msg) Mouse2VR::Logger::Instance().Log(Mouse2VR::Logger::DEBUG, component, msg)
 #define LOG_INFO(component, msg) Mouse2VR::Logger::Instance().Log(Mouse2VR::Logger::INFO, component, msg)
 #define LOG_WARNING(component, msg) Mouse2VR::Logger::Instance().Log(Mouse2VR::Logger::WARNING, component, msg)
-#define LOG_ERROR(component, msg) Mouse2VR::Logger::Instance().Log(Mouse2VR::Logger::ERROR, component, msg)
+#define LOG_ERROR(component, msg) Mouse2VR::Logger::Instance().Log(Mouse2VR::Logger::ERROR_LEVEL, component, msg)
 
 // Convenience macros with data
 #define LOG_DEBUG_DATA(component, msg, key, value) \

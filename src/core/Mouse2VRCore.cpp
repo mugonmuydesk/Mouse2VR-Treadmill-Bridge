@@ -1,3 +1,9 @@
+// Include C runtime headers first to prevent Windows.h conflicts
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <cctype>
+
 #include "core/Mouse2VRCore.h"
 #include "common/Logger.h"
 #include <thread>

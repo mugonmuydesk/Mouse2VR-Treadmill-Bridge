@@ -36,3 +36,7 @@ desktop.ini
 
 # Log files
 *.log
+
+# Debugging/diagnostic files
+preprocessed_*.txt
+temp.obj

@@ -53,6 +53,5 @@ jobs:
         name: Mouse2VR-${{ matrix.config }}
         path: |
           build/bin/${{ matrix.config }}/Mouse2VR.exe
-          build/bin/${{ matrix.config }}/Mouse2VR_WinUI.exe
+          build/bin/${{ matrix.config }}/Mouse2VR_WebView.exe
           build/bin/${{ matrix.config }}/*.dll
-          build/bin/${{ matrix.config }}/resources.pri

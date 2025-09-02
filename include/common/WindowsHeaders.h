@@ -4,6 +4,12 @@
 // to avoid conflicts with STL and our code
 
 #ifdef _WIN32
+    // Include C runtime headers BEFORE Windows.h to prevent issues
+    #include <cstddef>
+    #include <cstdlib>
+    #include <cstring>
+    #include <cctype>
+    
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
     #endif

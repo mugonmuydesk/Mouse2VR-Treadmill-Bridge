@@ -1,6 +1,10 @@
 #include <gtest/gtest.h>
 #include "core/ConfigManager.h"
 #include <filesystem>
+#include <thread>
+#include <vector>
+
+using namespace Mouse2VR;
 
 class ConfigManagerTest : public ::testing::Test {
 protected:
@@ -28,93 +32,120 @@ protected:
 };
 
 TEST_F(ConfigManagerTest, DefaultValuesAreSet) {
-    // Should have default values even without loading
-    EXPECT_GT(config->GetSensitivity(), 0.0);
-    EXPECT_GT(config->GetUpdateRate(), 0);
-    EXPECT_FALSE(config->GetInvertY());
-    EXPECT_FALSE(config->GetAutoStart());
+    // Get default config
+    AppConfig appConfig = config->GetConfig();
+    
+    // Check defaults
+    EXPECT_EQ(appConfig.sensitivity, 1.0f);
+    EXPECT_EQ(appConfig.deadzone, 0.0f);
+    EXPECT_FALSE(appConfig.invertX);
+    EXPECT_FALSE(appConfig.invertY);
+    EXPECT_TRUE(appConfig.lockX);  // Treadmill locks X by default
+    EXPECT_FALSE(appConfig.lockY);
+    EXPECT_EQ(appConfig.updateIntervalMs, 20);  // 50Hz
 }
 
-TEST_F(ConfigManagerTest, SetAndGetSensitivity) {
-    config->SetSensitivity(2.5);
-    EXPECT_EQ(config->GetSensitivity(), 2.5);
+TEST_F(ConfigManagerTest, SetAndGetConfig) {
+    AppConfig newConfig;
+    newConfig.sensitivity = 2.5f;
+    newConfig.deadzone = 0.1f;
+    newConfig.invertY = true;
+    newConfig.updateIntervalMs = 10;
     
-    config->SetSensitivity(0.1);
-    EXPECT_EQ(config->GetSensitivity(), 0.1);
-}
-
-TEST_F(ConfigManagerTest, SetAndGetUpdateRate) {
-    config->SetUpdateRate(120);
-    EXPECT_EQ(config->GetUpdateRate(), 120);
+    config->SetConfig(newConfig);
+    AppConfig retrieved = config->GetConfig();
     
-    config->SetUpdateRate(30);
-    EXPECT_EQ(config->GetUpdateRate(), 30);
-}
-
-TEST_F(ConfigManagerTest, SetAndGetInvertY) {
-    config->SetInvertY(true);
-    EXPECT_TRUE(config->GetInvertY());
-    
-    config->SetInvertY(false);
-    EXPECT_FALSE(config->GetInvertY());
-}
-
-TEST_F(ConfigManagerTest, SetAndGetAutoStart) {
-    config->SetAutoStart(true);
-    EXPECT_TRUE(config->GetAutoStart());
-    
-    config->SetAutoStart(false);
-    EXPECT_FALSE(config->GetAutoStart());
+    EXPECT_EQ(retrieved.sensitivity, 2.5f);
+    EXPECT_EQ(retrieved.deadzone, 0.1f);
+    EXPECT_TRUE(retrieved.invertY);
+    EXPECT_EQ(retrieved.updateIntervalMs, 10);
 }
 
 TEST_F(ConfigManagerTest, SaveAndLoadConfig) {
     // Set custom values
-    config->SetSensitivity(1.5);
-    config->SetUpdateRate(90);
-    config->SetInvertY(true);
-    config->SetAutoStart(true);
+    AppConfig customConfig;
+    customConfig.sensitivity = 1.5f;
+    customConfig.invertY = true;
+    customConfig.maxSpeed = 2.0f;
+    customConfig.showDebugInfo = false;
+    
+    config->SetConfig(customConfig);
     
     // Save
-    EXPECT_TRUE(config->SaveConfig());
+    EXPECT_TRUE(config->Save());
     
     // Create new instance and load
     auto config2 = std::make_unique<ConfigManager>(testConfigPath);
-    EXPECT_TRUE(config2->LoadConfig());
+    EXPECT_TRUE(config2->Load());
     
     // Verify values were persisted
-    EXPECT_EQ(config2->GetSensitivity(), 1.5);
-    EXPECT_EQ(config2->GetUpdateRate(), 90);
-    EXPECT_TRUE(config2->GetInvertY());
-    EXPECT_TRUE(config2->GetAutoStart());
+    AppConfig loaded = config2->GetConfig();
+    EXPECT_EQ(loaded.sensitivity, 1.5f);
+    EXPECT_TRUE(loaded.invertY);
+    EXPECT_EQ(loaded.maxSpeed, 2.0f);
+    EXPECT_FALSE(loaded.showDebugInfo);
 }
 
 TEST_F(ConfigManagerTest, LoadNonExistentFileReturnsFalse) {
     auto config = std::make_unique<ConfigManager>("non_existent_file.json");
-    EXPECT_FALSE(config->LoadConfig());
+    EXPECT_FALSE(config->Load());
     
     // Should still have default values
-    EXPECT_GT(config->GetSensitivity(), 0.0);
+    AppConfig defaults = config->GetConfig();
+    EXPECT_EQ(defaults.sensitivity, 1.0f);
 }
 
-TEST_F(ConfigManagerTest, GetDeadzone) {
-    // Deadzone should have a reasonable default
-    double deadzone = config->GetDeadzone();
-    EXPECT_GE(deadzone, 0.0);
-    EXPECT_LE(deadzone, 1.0);
+TEST_F(ConfigManagerTest, CreateDefaultConfig) {
+    EXPECT_TRUE(config->CreateDefaultConfig());
+    
+    // File should exist now
+    EXPECT_TRUE(std::filesystem::exists(testConfigPath));
+    
+    // Should be loadable
+    auto config2 = std::make_unique<ConfigManager>(testConfigPath);
+    EXPECT_TRUE(config2->Load());
 }
 
-TEST_F(ConfigManagerTest, ValidationLimits) {
-    // Test sensitivity limits
-    config->SetSensitivity(-1.0);
-    EXPECT_GT(config->GetSensitivity(), 0.0); // Should be clamped to positive
+TEST_F(ConfigManagerTest, ProcessingConfigConversion) {
+    AppConfig appConfig;
+    appConfig.sensitivity = 2.0f;
+    appConfig.deadzone = 0.05f;
+    appConfig.invertX = true;
+    appConfig.lockY = true;
     
-    config->SetSensitivity(100.0);
-    EXPECT_LE(config->GetSensitivity(), 10.0); // Should be clamped to max
+    ProcessingConfig procConfig = appConfig.toProcessingConfig();
     
-    // Test update rate limits  
-    config->SetUpdateRate(0);
-    EXPECT_GT(config->GetUpdateRate(), 0); // Should be clamped to minimum
+    EXPECT_EQ(procConfig.sensitivity, 2.0f);
+    EXPECT_EQ(procConfig.deadzone, 0.05f);
+    EXPECT_TRUE(procConfig.invertX);
+    EXPECT_TRUE(procConfig.lockY);
+}
+
+TEST_F(ConfigManagerTest, ThreadSafety) {
+    // This test just ensures the methods don't crash when called concurrently
+    std::vector<std::thread> threads;
     
-    config->SetUpdateRate(1000);
-    EXPECT_LE(config->GetUpdateRate(), 240); // Should be clamped to max
+    // Multiple readers
+    for (int i = 0; i < 5; ++i) {
+        threads.emplace_back([this]() {
+            for (int j = 0; j < 100; ++j) {
+                auto cfg = config->GetConfig();
+                (void)cfg; // Use the config
+            }
+        });
+    }
+    
+    // One writer
+    threads.emplace_back([this]() {
+        for (int j = 0; j < 100; ++j) {
+            AppConfig cfg;
+            cfg.sensitivity = static_cast<float>(j) / 100.0f;
+            config->SetConfig(cfg);
+        }
+    });
+    
+    // Wait for all threads
+    for (auto& t : threads) {
+        t.join();
+    }
 }

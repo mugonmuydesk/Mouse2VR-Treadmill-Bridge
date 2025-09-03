@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <Windows.h>
+#include <objbase.h>  // For CoInitializeEx
 
 // Custom test environment for Windows-specific setup
 class WindowsTestEnvironment : public ::testing::Environment {

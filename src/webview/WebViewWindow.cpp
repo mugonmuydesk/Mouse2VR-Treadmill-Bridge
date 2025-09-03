@@ -711,7 +711,10 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             ctx.arc(w/2, y, 10, 0, Math.PI * 2);
             ctx.fill();
         }
+        )HTML";
         
+    // Part 4: Speed graph functions
+    html += LR"HTML(
         function initializeSpeedCanvas() {
             const canvas = document.getElementById('speedCanvas');
             if (!canvas) return;

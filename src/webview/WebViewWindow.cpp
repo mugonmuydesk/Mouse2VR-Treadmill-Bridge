@@ -334,37 +334,44 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
     <title>Mouse2VR Treadmill Bridge</title>
     <style>
         body {
-            font-family: "Segoe UI Variable Text", "Segoe UI", sans-serif;
+            font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
             margin: 0;
-            background: #f3f3f3;
+            background: #f5f5f5;
             color: #1a1a1a;
             font-size: 14px;
             line-height: 20px;
         }
         
+        .page-container {
+            padding: 32px 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        
         /* app-container removed - redundant with app-window */
         
         h1 {
-            font-size: 28px;
-            line-height: 36px;
-            margin-bottom: 24px;
-            font-weight: 400;
+            font-size: 32px;
+            line-height: 40px;
+            margin: 0 0 32px 0;
+            font-weight: 600;
             color: #1a1a1a;
         }
         
         .section-label {
-            font-size: 14px;
-            font-weight: 500;
-            color: #616161;
-            margin: 16px 0 8px 4px;
+            font-size: 24px;
+            line-height: 32px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 32px 0 16px 0;
         }
         
         .status-card, .chart-card, .setting-card {
             background: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
-            padding: 12px 16px;
-            margin-bottom: 12px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 0 2px rgba(0,0,0,0.06);
+            padding: 16px;
+            margin-bottom: 8px;
         }
         
         .status-grid {
@@ -442,8 +449,25 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             font-weight: 500;
         }
         
+        .slider-value {
+            display: inline-block;
+            min-width: 35px;
+            text-align: right;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+        
         input[type="range"] {
             width: 160px;
+        }
+        
+        /* Show tick marks for datalist */
+        input[type="range"]::-webkit-slider-container {
+            background: linear-gradient(to right, 
+                transparent calc(33.33% - 1px), 
+                #ccc calc(33.33% - 1px), 
+                #ccc calc(33.33% + 1px), 
+                transparent calc(33.33% + 1px));
         }
         
         .radio-group, .checkbox-group {
@@ -521,7 +545,8 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
     
     // Part 2: Body content with Fluent Design layout
     html += LR"HTML(<body>
-    <h1>Mouse2VR Treadmill Bridge</h1>
+    <div class="page-container">
+        <h1>Mouse2VR Treadmill Bridge</h1>
         
         <div class="side-by-side">
             <div>
@@ -571,7 +596,16 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         <div class="setting-card">
             <div class="setting-row">
                 <span class="setting-label">Sensitivity</span>
-                <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0" onchange="updateSensitivity(this.value)" />
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0" 
+                           oninput="updateSensitivityValue(this.value)" 
+                           onchange="updateSensitivity(this.value)" 
+                           list="sensitivity-ticks" />
+                    <datalist id="sensitivity-ticks">
+                        <option value="1.0"></option>
+                    </datalist>
+                    <span class="slider-value" id="sensitivityValue">1.0</span>
+                </div>
             </div>
         </div>
         
@@ -597,13 +631,16 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             </div>
         </div>
         
-        <div class="setting-row">
-            <span class="setting-label">Enable Virtual Controller</span>
-            <label class="switch">
-                <input type="checkbox" id="enableController" checked onchange="toggleRunning()">
-                <span class="slider"></span>
-            </label>
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Enable Virtual Controller</span>
+                <label class="switch">
+                    <input type="checkbox" id="enableController" checked onchange="toggleRunning()">
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
+    </div>
     )HTML";
     
     // Part 3: JavaScript with Fluent Design interactions
@@ -640,7 +677,12 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             }
         }
         
+        function updateSensitivityValue(value) {
+            document.getElementById('sensitivityValue').textContent = parseFloat(value).toFixed(1);
+        }
+        
         function updateSensitivity(value) {
+            updateSensitivityValue(value);
             if (window.mouse2vr) {
                 window.mouse2vr.setSensitivity(parseFloat(value));
             }

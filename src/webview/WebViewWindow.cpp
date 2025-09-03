@@ -150,6 +150,9 @@ HRESULT WebViewWindow::OnCreateWebViewControllerCompleted(HRESULT result, ICoreW
     // Load the embedded HTML
     NavigateToString(GetEmbeddedHTML());
     
+    // Force window title (in case WebView2 changes it)
+    SetWindowTextW(m_parentWindow, L"Mouse2VR Treadmill Bridge");
+    
     LOG_INFO("WebView", "WebView2 initialized successfully");
     return S_OK;
 }
@@ -200,6 +203,8 @@ void WebViewWindow::RegisterEventHandlers() {
                 
                 if (success) {
                     LOG_INFO("WebView", "Navigation completed successfully");
+                    // Force window title again after navigation
+                    SetWindowTextW(m_parentWindow, L"Mouse2VR Treadmill Bridge");
                     InjectInitialScript();
                     if (m_onDocumentReady) {
                         m_onDocumentReady();

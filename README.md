@@ -11,7 +11,7 @@ Mouse2VR bridges the gap between physical treadmill movement and virtual reality
 - ✅ Direct ViGEm integration - Creates virtual Xbox 360 controller
 - ✅ Zero smoothing - Your treadmill provides real physics
 - ✅ High performance - 100Hz update rate
-- ✅ Multiple interfaces - Console, Win32 GUI, and modern WinUI 3 (in development)
+- ✅ Multiple interfaces - Console and WebView2 GUI
 - ✅ Modular architecture - Core library with pluggable UI frontends
 - ✅ Fixed mouse direction mapping - Forward movement works correctly
 
@@ -80,17 +80,17 @@ cd Mouse2VR-Treadmill-Bridge
 mkdir build
 cd build
 
-# Configure (choose your build targets)
-cmake .. -DBUILD_CONSOLE=ON -DBUILD_WIN32_GUI=ON -DBUILD_WINUI=OFF
+# Configure
+cmake .. -DBUILD_CONSOLE=ON -DBUILD_WEBVIEW=ON
 
 # Build
 cmake --build . --config Release
 
-# Run console version
-./bin/Mouse2VR.exe
+# Run console version (for testing)
+./bin/Release/Mouse2VR.exe
 
-# Or run GUI version
-./bin/Mouse2VR_GUI.exe
+# Or run WebView2 GUI version
+./bin/Release/Mouse2VR_WebView.exe
 ```
 
 ## 🗺️ Roadmap
@@ -104,8 +104,8 @@ cmake --build . --config Release
 
 ### v2.0 - Enhanced UI (In Progress - Current v2.3.0)
 - [x] Modular core library architecture
-- [x] Win32 GUI implementation
-- [x] WinUI 3 modern interface (in active development)
+- [x] WebView2 GUI implementation with system tray
+- [x] Modern HTML/CSS/JS interface
 - [x] Debug logging capabilities
 - [x] Fixed mouse direction mapping
 - [ ] Live input visualization

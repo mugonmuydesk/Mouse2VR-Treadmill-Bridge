@@ -14,12 +14,11 @@ C:\Dev\                                 # All development projects
 
 C:\Dev\Releases\                       # Downloaded builds for testing
 ├── Mouse2VR\                          
-│   ├── v0.1.0\                       # Version folders
-│   │   ├── Mouse2VR_Console.exe
-│   │   ├── Mouse2VR_Win32.exe
-│   │   └── Mouse2VR_WinUI.exe
-│   ├── v0.1.1\
-│   └── latest\                       # Symlink to newest version
+│   ├── v0.1.0-20250901-abc1234\      # Properly versioned folders
+│   │   ├── Mouse2VR.exe              # Console application
+│   │   ├── Mouse2VR_WebView.exe      # WebView2 GUI
+│   │   └── ViGEmClient.dll           # Required dependency
+│   └── v0.2.0-20250903-def5678\      # Another version
 └── Mouse2Joystick4VR\
     └── ...
 ```
@@ -51,26 +50,19 @@ git clone https://github.com/mugonmuydesk/dev-context.git
 - Has system tray support
 - Check `logs\debug.log` for detailed logging
 
-### 3. WinUI3 (Experimental)
-- Use "Launch WinUI3" configuration
-- Limited debugging in VS Code
-- Heavily relies on logging to `logs\debug.log`
-
 ## VS Code Debugging
 
 ### Available Debug Configurations
 
 1. **Debug Console App** - Full debugging with breakpoints
-2. **Debug Win32 UI** - Debug production UI with system tray
-3. **Launch WinUI3 (No Attach)** - Run with logging enabled
-4. **Attach to Running Process** - Attach to any running instance
+2. **Debug WebView2** - Debug GUI with Chrome DevTools
+3. **Attach to Running Process** - Attach to any running instance
 
 ### Task Commands (Ctrl+Shift+P → "Tasks: Run Task")
 
 - **Build Console Debug** - Build console app
-- **Build Win32 Debug** - Build Win32 UI
-- **Build WinUI3** - Build experimental UI
-- **Build All** - Build console and Win32 (default)
+- **Build WebView2 Debug** - Build WebView2 GUI
+- **Build All** - Build console and WebView2
 - **View Logs** - Tail debug.log in real-time
 - **Clear Logs** - Delete all log files
 - **Configure CMake** - Initial CMake setup

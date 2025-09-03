@@ -16,7 +16,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 # Options
 option(BUILD_CONSOLE "Build console application" ON)
-option(BUILD_WINUI "Build WinUI 3 GUI application" OFF)
 option(BUILD_WEBVIEW "Build WebView2 application" ON)
 
 # Add subdirectories
@@ -72,11 +71,6 @@ if(BUILD_CONSOLE)
             $<TARGET_FILE:ViGEmClient>
             $<TARGET_FILE_DIR:Mouse2VR>
     )
-endif()
-
-# WinUI 3 application
-if(BUILD_WINUI)
-    add_subdirectory(src/winui)
 endif()
 
 # WebView2 application

@@ -4,8 +4,42 @@
 #include "common/Logger.h"
 #include <sstream>
 #include <filesystem>
+#include <Shlwapi.h>
 
 using namespace Microsoft::WRL;
+
+// Utility to build a path to the bundled runtime
+std::wstring GetWebView2FixedRuntimePath() {
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+
+    // Remove filename
+    PathRemoveFileSpecW(exePath);
+
+    // Append "WebView2Runtime" (relative folder copied by CMake)
+    wchar_t runtimePath[MAX_PATH];
+    PathCombineW(runtimePath, exePath, L"WebView2Runtime");
+
+    return std::wstring(runtimePath);
+}
+
+// Check if Fixed Runtime is available
+bool IsWebView2FixedRuntimeAvailable() {
+    std::wstring runtimePath = GetWebView2FixedRuntimePath();
+    
+    // Check if runtime folder exists
+    DWORD attrs = GetFileAttributesW(runtimePath.c_str());
+    if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+        return false;
+    }
+    
+    // Check if main WebView2 executable exists in the runtime folder
+    wchar_t runtimeExe[MAX_PATH];
+    PathCombineW(runtimeExe, runtimePath.c_str(), L"msedgewebview2.exe");
+    
+    attrs = GetFileAttributesW(runtimeExe);
+    return (attrs != INVALID_FILE_ATTRIBUTES);
+}
 
 WebViewWindow::WebViewWindow() 
     : m_parentWindow(nullptr)
@@ -35,11 +69,27 @@ bool WebViewWindow::Initialize(HWND parentWindow, Mouse2VR::Mouse2VRCore* core) 
 }
 
 HRESULT WebViewWindow::CreateWebView2Environment() {
-    // Create WebView2 environment with default settings
+    // Determine which runtime to use
+    std::wstring browserExecutableFolder;
+    const wchar_t* browserPath = nullptr;
+    
+    if (IsWebView2FixedRuntimeAvailable()) {
+        // Use Fixed Runtime (preferred)
+        browserExecutableFolder = GetWebView2FixedRuntimePath();
+        browserPath = browserExecutableFolder.c_str();
+        LOG_INFO("WebView", "Using WebView2 Fixed Runtime at: " + 
+                 std::string(browserExecutableFolder.begin(), browserExecutableFolder.end()));
+    } else {
+        // Fallback to Evergreen Runtime (system-installed)
+        browserPath = nullptr;
+        LOG_INFO("WebView", "Using WebView2 Evergreen Runtime (system-installed)");
+    }
+    
+    // Create WebView2 environment
     return CreateCoreWebView2EnvironmentWithOptions(
-        nullptr,  // Use default Edge installation
-        nullptr,  // Use default user data folder
-        nullptr,  // No additional options
+        browserPath,  // Use Fixed Runtime if available, otherwise default
+        nullptr,      // Use default user data folder
+        nullptr,      // No additional options
         Callback<ICoreWebView2CreateCoreWebView2EnvironmentCompletedHandler>(
             [this](HRESULT result, ICoreWebView2Environment* environment) -> HRESULT {
                 return OnCreateEnvironmentCompleted(result, environment);

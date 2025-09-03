@@ -9,6 +9,7 @@
 #include <wrl.h>
 #include <wil/com.h>
 #include <WebView2.h>
+#include <Shlwapi.h>
 #include "SystemTray.h"
 #include "WebViewWindow.h"
 #include "core/Mouse2VRCore.h"
@@ -16,10 +17,48 @@
 
 using namespace Microsoft::WRL;
 
-// Check WebView2 availability
+// Utility to build a path to the bundled runtime
+std::wstring GetFixedRuntimePath() {
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileNameW(nullptr, exePath, MAX_PATH);
+
+    // Remove filename
+    PathRemoveFileSpecW(exePath);
+
+    // Append "WebView2Runtime" (relative folder copied by CMake)
+    wchar_t runtimePath[MAX_PATH];
+    PathCombineW(runtimePath, exePath, L"WebView2Runtime");
+
+    return std::wstring(runtimePath);
+}
+
+// Check if Fixed Runtime is available (preferred over Evergreen)
+bool IsFixedRuntimeAvailable() {
+    std::wstring runtimePath = GetFixedRuntimePath();
+    
+    // Check if runtime folder exists
+    DWORD attrs = GetFileAttributesW(runtimePath.c_str());
+    if (attrs == INVALID_FILE_ATTRIBUTES || !(attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+        return false;
+    }
+    
+    // Check if main WebView2 executable exists in the runtime folder
+    wchar_t runtimeExe[MAX_PATH];
+    PathCombineW(runtimeExe, runtimePath.c_str(), L"msedgewebview2.exe");
+    
+    attrs = GetFileAttributesW(runtimeExe);
+    return (attrs != INVALID_FILE_ATTRIBUTES);
+}
+
+// Check WebView2 availability (fallback to Evergreen if Fixed Runtime not found)
 bool IsWebView2Available() {
+    // First check for Fixed Runtime (preferred)
+    if (IsFixedRuntimeAvailable()) {
+        return true;
+    }
+    
+    // Fallback: check for Evergreen Runtime
     try {
-        // Try to get the WebView2 version - this will fail if runtime is not available
         wil::unique_cotaskmem_string version;
         HRESULT hr = GetAvailableCoreWebView2BrowserVersionString(nullptr, &version);
         return SUCCEEDED(hr) && version.get() != nullptr;
@@ -39,12 +78,23 @@ public:
         
         // Check WebView2 availability first
         if (!IsWebView2Available()) {
-            MessageBoxA(nullptr, 
-                       "WebView2 Runtime is not installed.\n\n"
-                       "Please install WebView2 Runtime from:\n"
-                       "https://developer.microsoft.com/en-us/microsoft-edge/webview2/\n\n"
-                       "Or run: winget install Microsoft.EdgeWebView2Runtime", 
-                       "WebView2 Runtime Missing", MB_OK | MB_ICONERROR);
+            std::wstring runtimePath = GetFixedRuntimePath();
+            std::string message = "WebView2 Runtime is not available.\n\n";
+            
+            if (!IsFixedRuntimeAvailable()) {
+                message += "Fixed Runtime not found at:\n";
+                message += std::string(runtimePath.begin(), runtimePath.end()) + "\n\n";
+                message += "Please ensure WebView2Runtime folder is next to the executable,\n";
+                message += "or install WebView2 Runtime from:\n";
+                message += "https://developer.microsoft.com/en-us/microsoft-edge/webview2/\n\n";
+                message += "Or run: winget install Microsoft.EdgeWebView2Runtime";
+            } else {
+                message += "System WebView2 Runtime not found.\n\n";
+                message += "Please install WebView2 Runtime or ensure the\n";
+                message += "bundled runtime is properly deployed.";
+            }
+            
+            MessageBoxA(nullptr, message.c_str(), "WebView2 Runtime Missing", MB_OK | MB_ICONERROR);
             return false;
         }
         

@@ -128,11 +128,13 @@ if(BUILD_WEBVIEW)
         NOMINMAX
     )
     
-    # Copy WebView2Loader.dll to output directory for deployment
+    # Set up Fixed Runtime deployment structure
     add_custom_command(TARGET Mouse2VR_WebView POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E echo "Copying WebView2 runtime files..."
-        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:Mouse2VR_WebView>
-        COMMENT "Setting up WebView2 runtime files"
+        COMMAND ${CMAKE_COMMAND} -E echo "Setting up WebView2 Fixed Runtime deployment..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:Mouse2VR_WebView>/WebView2Runtime
+        COMMAND ${CMAKE_COMMAND} -E echo "NOTE: To enable Fixed Runtime, download WebView2 Fixed Version Runtime from Microsoft"
+        COMMAND ${CMAKE_COMMAND} -E echo "and extract to: $<TARGET_FILE_DIR:Mouse2VR_WebView>/WebView2Runtime/"
+        COMMENT "Preparing WebView2 Fixed Runtime deployment structure"
     )
     
     # Copy ViGEmClient DLL to output directory

@@ -24,7 +24,7 @@ public:
     static Logger& Instance(); // Moved to Logger.cpp
 
     void Initialize(const std::string& logPath = "logs/debug.log") {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
         
         // Create logs directory if it doesn't exist
         std::filesystem::path logDir = std::filesystem::path(logPath).parent_path();
@@ -41,7 +41,7 @@ public:
     }
 
     void Log(Level level, const std::string& component, const std::string& message) {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
         
         std::stringstream ss;
         ss << "[" << GetTimestamp() << "] "
@@ -88,14 +88,14 @@ public:
     }
 
     void Flush() {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
         if (m_file.is_open()) {
             m_file.flush();
         }
     }
 
     void Close() {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        std::lock_guard<std::recursive_mutex> lock(m_mutex);
         if (m_file.is_open()) {
             Log(INFO, "Logger", "=== Logger Closing ===");
             m_file.close();
@@ -112,7 +112,7 @@ private:
     Logger& operator=(const Logger&) = delete;
 
     std::ofstream m_file;
-    std::mutex m_mutex;
+    std::recursive_mutex m_mutex;
     
     #ifdef _DEBUG
     #ifdef _WIN32

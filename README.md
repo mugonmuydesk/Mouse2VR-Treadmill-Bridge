@@ -2,6 +2,8 @@
 
 Convert your DIY treadmill's mouse sensor input into smooth VR locomotion!
 
+**✅ v2.4.0 Update: Core functionality fully restored! The app now properly captures mouse input and controls the virtual gamepad.**
+
 ## 🎯 What This Does
 
 Mouse2VR bridges the gap between physical treadmill movement and virtual reality locomotion. It captures raw mouse movement from a sensor attached to your treadmill belt and translates it into Xbox controller stick input that VR games understand.
@@ -116,16 +118,17 @@ cmake --build . --config Release
 - [x] Fixed sensitivity
 - [x] Config file support (ConfigManager implemented)
 
-### v2.0 - Enhanced UI (In Progress - Current v2.3.0)
+### v2.0 - Enhanced UI (In Progress - Current v2.4.0)
 - [x] Modular core library architecture
 - [x] WebView2 GUI implementation with optional system tray
 - [x] Modern HTML/CSS/JS interface
 - [x] Debug logging capabilities
 - [x] Fixed mouse direction mapping
 - [x] Standard Windows application behavior
+- [x] **Core functionality restored** - Mouse input now properly connected to virtual controller
+- [x] Real-time speed display from actual sensor data
 - [ ] Live input visualization
-- [ ] Stick position preview (partially implemented)
-- [ ] Settings panel (in progress)
+- [ ] Settings panel (configuration methods implemented, UI pending)
 - [ ] Calibration wizard
 
 ### v3.0 - Advanced Features

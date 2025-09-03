@@ -247,20 +247,25 @@ void WebViewWindow::RegisterEventHandlers() {
                     bool value = (msg.substr(9) == L"true");
                     m_core->SetLockX(value);
                     LOG_INFO("WebView", "Set lock X to: " + std::string(value ? "true" : "false"));
+                } else if (msg.find(L"setDPI:") == 0) {
+                    int dpi = std::stoi(msg.substr(7));
+                    // Calculate counts per meter: DPI * 39.3701 (inches per meter)
+                    float countsPerMeter = dpi * 39.3701f;
+                    m_core->SetCountsPerMeter(countsPerMeter);
+                    LOG_INFO("WebView", "Set DPI to: " + std::to_string(dpi) + " (counts/meter: " + std::to_string(countsPerMeter) + ")");
                 } else if (msg == L"getStatus") {
                     bool isRunning = m_core->IsRunning();
                     ExecuteScript(L"updateStatus(" + std::wstring(isRunning ? L"true" : L"false") + L")");
                 } else if (msg == L"getSpeed") {
                     auto state = m_core->GetCurrentState();
-                    // Calculate signed speed (positive = forward, negative = backward)
-                    double signedSpeed = state.stickY >= 0 ? state.speed : -state.speed;
-                    // Game speed is stick deflection * max game speed (preserving direction)
-                    // This shows the effective movement speed in game after sensitivity
-                    double gameSpeed = state.stickY * 3.0; // Scale to max 3 m/s at full stick deflection
+                    // Treadmill speed is the raw physical speed (m/s)
+                    double treadmillSpeed = state.stickY >= 0 ? state.speed : -state.speed;
+                    // Game speed based on stick deflection and HL2 max sprint speed (6.1 m/s)
+                    double gameSpeed = state.stickY * 6.1; // HL2 max sprint speed at full deflection
                     // Get actual update rate from backend
                     int actualHz = m_core->GetActualUpdateRate();
-                    // Send speed, game speed, stick Y position, and actual update rate
-                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(signedSpeed) + 
+                    // Send treadmill speed, game speed, stick Y position, and actual update rate
+                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(treadmillSpeed) + 
                                               L", " + std::to_wstring(gameSpeed) +
                                               L", " + std::to_wstring(state.stickY) +
                                               L", " + std::to_wstring(actualHz) + L")";
@@ -299,6 +304,9 @@ void WebViewWindow::InjectInitialScript() {
             },
             setLockX: function(value) {
                 window.chrome.webview.postMessage('setLockX:' + value);
+            },
+            setDPI: function(value) {
+                window.chrome.webview.postMessage('setDPI:' + value);
             },
             getStatus: function() {
                 window.chrome.webview.postMessage('getStatus');
@@ -600,6 +608,26 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         <div class="setting-card">
             <div class="setting-row">
+                <span class="setting-label">Mouse DPI</span>
+                <div class="radio-group">
+                    <label><input type="radio" name="dpi" value="400" onchange="updateDPI(400)"> 400</label>
+                    <label><input type="radio" name="dpi" value="800" onchange="updateDPI(800)"> 800</label>
+                    <label><input type="radio" name="dpi" value="1000" checked onchange="updateDPI(1000)"> 1000</label>
+                    <label><input type="radio" name="dpi" value="1200" onchange="updateDPI(1200)"> 1200</label>
+                    <label><input type="radio" name="dpi" value="1600" onchange="updateDPI(1600)"> 1600</label>
+                    <label><input type="radio" name="dpi" value="3200" onchange="updateDPI(3200)"> 3200</label>
+                    <label>
+                        <input type="radio" name="dpi" value="custom" onchange="enableCustomDPI()"> Custom:
+                        <input type="number" id="customDPI" min="100" max="25600" value="800" 
+                               style="width: 70px; margin-left: 4px;" 
+                               disabled onchange="updateCustomDPI(this.value)" />
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
                 <span class="setting-label">Sensitivity</span>
                 <div style="display: flex; align-items: center;">
                     <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0" 
@@ -655,6 +683,8 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         let treadmillSpeedHistory = [];
         let gameSpeedHistory = [];
         let lastUpdateTime = Date.now();
+        let currentDPI = 1000;  // Default DPI
+        let sensitivity = 1.0;  // Current sensitivity multiplier
         
         // Initialize canvases when page loads
         window.addEventListener('DOMContentLoaded', () => {
@@ -688,8 +718,32 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         function updateSensitivity(value) {
             updateSensitivityValue(value);
+            sensitivity = parseFloat(value);
             if (window.mouse2vr) {
                 window.mouse2vr.setSensitivity(parseFloat(value));
+            }
+        }
+        
+        function updateDPI(value) {
+            currentDPI = value;
+            if (window.mouse2vr) {
+                window.mouse2vr.setDPI(value);
+            }
+            // Disable custom input when preset is selected
+            document.getElementById('customDPI').disabled = true;
+        }
+        
+        function enableCustomDPI() {
+            const customInput = document.getElementById('customDPI');
+            customInput.disabled = false;
+            customInput.focus();
+            updateCustomDPI(customInput.value);
+        }
+        
+        function updateCustomDPI(value) {
+            currentDPI = parseInt(value);
+            if (window.mouse2vr && !isNaN(currentDPI)) {
+                window.mouse2vr.setDPI(currentDPI);
             }
         }
         
@@ -861,7 +915,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             
             treadmillSpeedHistory.forEach((speed, i) => {
                 const x = (i / (treadmillSpeedHistory.length - 1)) * w;
-                const y = h/2 - ((speed / 3) * (h/2)); // Scale: 3 m/s = full height
+                const y = h/2 - ((speed / 2) * (h/2)); // Scale: 2 m/s = full height for treadmill
                 
                 if (i === 0) {
                     ctx.moveTo(x, y);
@@ -879,7 +933,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             
             gameSpeedHistory.forEach((speed, i) => {
                 const x = (i / (gameSpeedHistory.length - 1)) * w;
-                const y = h/2 - ((speed / 3) * (h/2)); // Same scale
+                const y = h/2 - ((speed / 6.1) * (h/2)); // Scale: 6.1 m/s = full height (HL2 max)
                 
                 if (i === 0) {
                     ctx.moveTo(x, y);
@@ -891,12 +945,12 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             ctx.globalAlpha = 1.0;
             
             // Draw legend (Fluent Design style)
-            const legendX = w - 140;
+            const legendX = w - 150;
             const legendY = 10;
             
             // Semi-transparent background
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillRect(legendX - 5, legendY - 5, 135, 45);
+            ctx.fillRect(legendX - 5, legendY - 5, 145, 45);
             
             // Legend items
             ctx.font = '12px "Segoe UI", sans-serif';
@@ -910,7 +964,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             ctx.stroke();
             
             ctx.fillStyle = '#1a1a1a';
-            ctx.fillText('Treadmill', legendX + 25, legendY + 12);
+            ctx.fillText('Treadmill Speed', legendX + 25, legendY + 12);
             
             // Game speed
             ctx.strokeStyle = '#10893e';
@@ -921,7 +975,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             ctx.stroke();
             
             ctx.fillStyle = '#1a1a1a';
-            ctx.fillText('Game (with sensitivity)', legendX + 25, legendY + 29);
+            ctx.fillText('Game Speed (HL2)', legendX + 25, legendY + 29);
         }
         
         // Request speed updates periodically

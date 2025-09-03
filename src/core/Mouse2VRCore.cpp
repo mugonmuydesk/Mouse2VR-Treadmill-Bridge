@@ -199,6 +199,21 @@ void Mouse2VRCore::SetLockX(bool lock) {
     }
 }
 
+void Mouse2VRCore::SetCountsPerMeter(float countsPerMeter) {
+    LOG_INFO("Core", "Setting counts per meter to: " + std::to_string(countsPerMeter));
+    if (m_processor) {
+        ProcessingConfig config = m_processor->GetConfig();
+        config.countsPerMeter = countsPerMeter;
+        m_processor->SetConfig(config);
+    }
+    if (m_config) {
+        auto cfg = m_config->GetConfig();
+        cfg.countsPerMeter = countsPerMeter;
+        m_config->SetConfig(cfg);
+        m_config->Save();
+    }
+}
+
 double Mouse2VRCore::GetCurrentSpeed() const {
     std::lock_guard<std::mutex> lock(m_stateMutex);
     return m_currentState.speed;

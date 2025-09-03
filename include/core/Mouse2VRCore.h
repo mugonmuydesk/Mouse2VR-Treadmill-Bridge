@@ -47,6 +47,7 @@ public:
     int GetUpdateRate() const;
     void SetInvertY(bool invert);
     void SetLockX(bool lock);
+    void SetCountsPerMeter(float countsPerMeter);
     
     // Statistics
     double GetCurrentSpeed() const;

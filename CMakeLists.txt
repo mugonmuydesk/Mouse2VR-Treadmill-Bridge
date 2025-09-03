@@ -17,6 +17,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 # Options
 option(BUILD_CONSOLE "Build console application" ON)
 option(BUILD_WEBVIEW "Build WebView2 application" ON)
+option(BUILD_TESTS "Build unit tests" ON)
 
 # Add subdirectories
 add_subdirectory(external)
@@ -136,6 +137,46 @@ if(BUILD_WEBVIEW)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             $<TARGET_FILE:ViGEmClient>
             $<TARGET_FILE_DIR:Mouse2VR_WebView>
+    )
+endif()
+
+# Testing
+if(BUILD_TESTS)
+    enable_testing()
+    
+    # Download and setup Google Test
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+    
+    # Test executable
+    add_executable(Mouse2VR_Tests
+        tests/test_main.cpp
+        tests/test_core.cpp
+        tests/test_input_processor.cpp
+        tests/test_config_manager.cpp
+    )
+    
+    target_link_libraries(Mouse2VR_Tests
+        Mouse2VRCore
+        GTest::gtest
+        GTest::gtest_main
+    )
+    
+    # Register tests with CTest
+    include(GoogleTest)
+    gtest_discover_tests(Mouse2VR_Tests)
+    
+    # Copy test executable to bin directory
+    add_custom_command(TARGET Mouse2VR_Tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:ViGEmClient>
+            $<TARGET_FILE_DIR:Mouse2VR_Tests>
     )
 endif()
 

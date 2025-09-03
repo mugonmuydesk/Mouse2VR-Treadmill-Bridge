@@ -1,0 +1,43 @@
+name: Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1
+    
+    - name: Configure CMake
+      run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON
+    
+    - name: Build Tests
+      run: cmake --build build --config Debug --target Mouse2VR_Tests
+    
+    - name: Run Tests
+      run: |
+        cd build
+        ctest -C Debug --output-on-failure --output-junit test_results.xml
+    
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: build/test_results.xml
+    
+    - name: Test Summary
+      if: always()
+      uses: test-summary/action@v2
+      with:
+        paths: build/test_results.xml

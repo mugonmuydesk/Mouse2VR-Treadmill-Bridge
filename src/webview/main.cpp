@@ -263,6 +263,16 @@ private:
             case WM_TRAYICON:
                 return HandleTrayMessage(wParam, lParam);
                 
+            case WM_NCHITTEST: {
+                // Allow dragging the window by clicking anywhere in the client area
+                LRESULT hit = DefWindowProc(hwnd, message, wParam, lParam);
+                if (hit == HTCLIENT) {
+                    // Convert client area hits to caption (allows dragging)
+                    return HTCAPTION;
+                }
+                return hit;
+            }
+                
             default:
                 return DefWindowProc(hwnd, message, wParam, lParam);
         }

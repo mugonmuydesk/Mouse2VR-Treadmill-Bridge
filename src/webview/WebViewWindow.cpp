@@ -233,6 +233,10 @@ void WebViewWindow::RegisterEventHandlers() {
                 } else if (msg == L"getStatus") {
                     bool isRunning = m_core->IsRunning();
                     ExecuteScript(L"updateStatus(" + std::wstring(isRunning ? L"true" : L"false") + L")");
+                } else if (msg == L"getSpeed") {
+                    auto state = m_core->GetCurrentState();
+                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(state.speed) + L")";
+                    ExecuteScript(speedUpdate);
                 } else if (msg == L"start") {
                     m_core->Start();
                     LOG_INFO("WebView", "Started Mouse2VR core");
@@ -267,6 +271,9 @@ void WebViewWindow::InjectInitialScript() {
             },
             stop: function() {
                 window.chrome.webview.postMessage('stop');
+            },
+            getSpeed: function() {
+                window.chrome.webview.postMessage('getSpeed');
             }
         };
         
@@ -478,13 +485,15 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             // TODO: Implement rate update
         }
         
-        // Simulate speed updates for testing
+        // Update speed display
+        function updateSpeed(speed) {
+            document.getElementById('speedValue').textContent = speed.toFixed(2);
+        }
+        
+        // Request speed updates periodically
         setInterval(() => {
-            if (isRunning) {
-                const speed = (Math.random() * 2).toFixed(2);
-                document.getElementById('speedValue').textContent = speed;
-            } else {
-                document.getElementById('speedValue').textContent = '0.00';
+            if (window.mouse2vr && window.mouse2vr.getSpeed) {
+                window.mouse2vr.getSpeed();
             }
         }, 100);
         

@@ -96,6 +96,10 @@ void Mouse2VRCore::Start() {
     LOG_INFO("Core", "Starting Mouse2VR Core...");
     m_isRunning = true;
     
+    // Initialize rate tracking
+    m_rateTrackingStart = std::chrono::steady_clock::now();
+    m_updateCount = 0;
+    
     // Start processing thread
     std::thread(&Mouse2VRCore::ProcessingLoop, this).detach();
 }
@@ -145,11 +149,12 @@ double Mouse2VRCore::GetSensitivity() const {
 }
 
 void Mouse2VRCore::SetUpdateRate(int hz) {
-    LOG_INFO("Core", "Setting update rate to: " + std::to_string(hz) + " Hz");
+    LOG_INFO("Core", "SetUpdateRate called with: " + std::to_string(hz) + " Hz");
     // Clamp to reasonable range
     if (hz < 10) hz = 10;
     if (hz > 200) hz = 200;
     m_updateRateHz = hz;
+    LOG_INFO("Core", "Update rate set to: " + std::to_string(m_updateRateHz.load()) + " Hz (interval: " + std::to_string(1000/hz) + " ms)");
     
     // Also save to config
     if (m_config) {
@@ -204,16 +209,33 @@ double Mouse2VRCore::GetAverageSpeed() const {
 }
 
 int Mouse2VRCore::GetActualUpdateRate() const {
-    return 60; // TODO: Implement
+    return m_actualUpdateRate.load();
 }
 
 void Mouse2VRCore::ProcessingLoop() {
+    LOG_DEBUG("Core", "ProcessingLoop started with target rate: " + std::to_string(m_updateRateHz.load()) + " Hz");
+    
     while (m_isRunning) {
+        auto loopStart = std::chrono::steady_clock::now();
+        
         UpdateController();
+        
         // Use dynamic update rate
-        int intervalMs = 1000 / m_updateRateHz;
-        std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
+        int targetHz = m_updateRateHz.load();
+        int intervalMs = 1000 / targetHz;
+        
+        // Calculate time already spent in this iteration
+        auto loopEnd = std::chrono::steady_clock::now();
+        auto processingTime = std::chrono::duration_cast<std::chrono::milliseconds>(loopEnd - loopStart).count();
+        
+        // Sleep for remaining time to hit target rate
+        int sleepMs = intervalMs - processingTime;
+        if (sleepMs > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+        }
     }
+    
+    LOG_DEBUG("Core", "ProcessingLoop ended");
 }
 
 void Mouse2VRCore::UpdateController() {
@@ -228,6 +250,16 @@ void Mouse2VRCore::UpdateController() {
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration<float>(now - m_lastUpdate).count();
     m_lastUpdate = now;
+    
+    // Track actual update rate
+    m_updateCount++;
+    auto rateElapsed = std::chrono::duration<float>(now - m_rateTrackingStart).count();
+    if (rateElapsed >= 1.0f) {
+        m_actualUpdateRate = static_cast<int>(m_updateCount / rateElapsed);
+        m_updateCount = 0;
+        m_rateTrackingStart = now;
+        LOG_DEBUG("Core", "Actual update rate: " + std::to_string(m_actualUpdateRate.load()) + " Hz");
+    }
     
     // Skip if no time has passed (prevent division by zero)
     if (elapsed <= 0.0f) {

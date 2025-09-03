@@ -73,6 +73,11 @@ private:
     std::chrono::steady_clock::time_point m_lastUpdate;
     std::atomic<int> m_updateRateHz{60};  // Default 60Hz
     
+    // Actual update rate tracking
+    std::chrono::steady_clock::time_point m_rateTrackingStart;
+    std::atomic<int> m_updateCount{0};
+    std::atomic<int> m_actualUpdateRate{0};
+    
     // Internal methods
     void ProcessingLoop();
     void UpdateController();

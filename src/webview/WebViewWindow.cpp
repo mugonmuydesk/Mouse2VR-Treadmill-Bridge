@@ -252,10 +252,13 @@ void WebViewWindow::RegisterEventHandlers() {
                     // Game speed is stick deflection * max game speed (preserving direction)
                     // This shows the effective movement speed in game after sensitivity
                     double gameSpeed = state.stickY * 3.0; // Scale to max 3 m/s at full stick deflection
-                    // Send speed, game speed, and stick Y position
+                    // Get actual update rate from backend
+                    int actualHz = m_core->GetActualUpdateRate();
+                    // Send speed, game speed, stick Y position, and actual update rate
                     std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(signedSpeed) + 
                                               L", " + std::to_wstring(gameSpeed) +
-                                              L", " + std::to_wstring(state.stickY) + L")";
+                                              L", " + std::to_wstring(state.stickY) +
+                                              L", " + std::to_wstring(actualHz) + L")";
                     ExecuteScript(speedUpdate);
                 } else if (msg == L"start") {
                     m_core->Start();
@@ -621,6 +624,8 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             if (window.mouse2vr) {
                 window.mouse2vr.setUpdateRate(value);
             }
+            // Update polling rate to match
+            startPolling(value);
         }
         
         function updateAxisOptions() {
@@ -638,7 +643,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         }
         
         // Update speed and stick displays
-        function updateSpeed(treadmillSpeed, gameSpeed, stickY) {
+        function updateSpeed(treadmillSpeed, gameSpeed, stickY, actualHz) {
             // Update speed value (show absolute for display)
             document.getElementById('speedValue').textContent = Math.abs(treadmillSpeed).toFixed(2) + ' m/s';
             
@@ -649,11 +654,16 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             }
             document.getElementById('stickValue').textContent = Math.round(stickPercent) + '%';
             
-            // Calculate update rate
-            const now = Date.now();
-            const hz = 1000 / (now - lastUpdateTime);
-            lastUpdateTime = now;
-            document.getElementById('updateRateValue').textContent = Math.round(hz) + ' Hz';
+            // Use actual Hz from backend if provided, otherwise calculate from JS
+            if (actualHz !== undefined && actualHz > 0) {
+                document.getElementById('updateRateValue').textContent = actualHz + ' Hz';
+            } else {
+                // Fallback to calculating from JS timing
+                const now = Date.now();
+                const hz = 1000 / (now - lastUpdateTime);
+                lastUpdateTime = now;
+                document.getElementById('updateRateValue').textContent = Math.round(hz) + ' Hz';
+            }
             
             // Update visualizations with actual stick position
             if (stickY !== undefined) {
@@ -834,11 +844,26 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         }
         
         // Request speed updates periodically
-        setInterval(() => {
-            if (window.mouse2vr && window.mouse2vr.getSpeed) {
-                window.mouse2vr.getSpeed();
+        let updateInterval = null;
+        
+        function startPolling(rateHz = 60) {
+            // Clear existing interval
+            if (updateInterval) {
+                clearInterval(updateInterval);
             }
-        }, 100);
+            
+            // Calculate interval from Hz (with minimum of 10ms)
+            const intervalMs = Math.max(10, Math.floor(1000 / rateHz));
+            
+            updateInterval = setInterval(() => {
+                if (window.mouse2vr && window.mouse2vr.getSpeed) {
+                    window.mouse2vr.getSpeed();
+                }
+            }, intervalMs);
+        }
+        
+        // Start with default 60Hz
+        startPolling(60);
         
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {

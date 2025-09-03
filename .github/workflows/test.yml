@@ -11,12 +11,12 @@ jobs:
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         submodules: recursive
     
     - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v2
     
     - name: Configure CMake
       run: cmake -B build -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON
@@ -27,17 +27,13 @@ jobs:
     - name: Run Tests
       run: |
         cd build
-        ctest -C Debug --output-on-failure --output-junit test_results.xml
+        ctest -C Debug --output-on-failure --verbose
     
     - name: Upload Test Results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
-        path: build/test_results.xml
-    
-    - name: Test Summary
-      if: always()
-      uses: test-summary/action@v2
-      with:
-        paths: build/test_results.xml
+        path: |
+          build/Testing/
+          build/bin/Debug/

@@ -236,24 +236,24 @@ private:
                     m_webView->Resize(bounds);
                 }
                 
-                // Minimize to tray instead of taskbar
-                if (wParam == SIZE_MINIMIZED) {
-                    MinimizeToTray();
-                    return 0;
-                }
+                // Let Windows handle normal minimize behavior
+                // if (wParam == SIZE_MINIMIZED) {
+                //     MinimizeToTray();
+                //     return 0;
+                // }
                 break;
                 
             case WM_SYSCOMMAND:
-                // Handle minimize button
-                if (wParam == SC_MINIMIZE) {
-                    MinimizeToTray();
-                    return 0;
-                }
+                // Let Windows handle normal minimize behavior
+                // if (wParam == SC_MINIMIZE) {
+                //     MinimizeToTray();
+                //     return 0;
+                // }
                 break;
                 
             case WM_CLOSE:
-                // Minimize to tray on close instead of exiting
-                MinimizeToTray();
+                // Normal close behavior
+                DestroyWindow(hwnd);
                 return 0;
                 
             case WM_DESTROY:

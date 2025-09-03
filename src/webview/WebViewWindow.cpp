@@ -139,6 +139,11 @@ HRESULT WebViewWindow::OnCreateWebViewControllerCompleted(HRESULT result, ICoreW
     // Resize WebView to fit parent window
     RECT bounds;
     GetClientRect(m_parentWindow, &bounds);
+    
+    // Leave room for the title bar by adjusting top
+    int titleBarHeight = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
+    bounds.top += titleBarHeight;
+    
     Resize(bounds);
     
     // Register event handlers

@@ -6,7 +6,6 @@
 // Then Windows-specific headers
 #include "common/WindowsHeaders.h"
 #include <shellapi.h>
-#include <windowsx.h>  // For GET_X_LPARAM, GET_Y_LPARAM
 #include <wrl.h>
 #include <wil/com.h>
 #include <WebView2.h>
@@ -136,12 +135,12 @@ public:
             return false;
         }
         
-        // Create main window (frameless for custom dragging)
+        // Create main window with standard title bar
         m_hwnd = CreateWindowExW(
             0,
             L"Mouse2VRWebView",
             L"Mouse2VR Treadmill Bridge",
-            WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU,
+            WS_OVERLAPPEDWINDOW,
             CW_USEDEFAULT, CW_USEDEFAULT,
             1200, 800,
             nullptr,
@@ -263,50 +262,6 @@ private:
                 
             case WM_TRAYICON:
                 return HandleTrayMessage(wParam, lParam);
-                
-            case WM_NCHITTEST: {
-                // For frameless window, we need custom hit testing
-                POINT pt;
-                pt.x = GET_X_LPARAM(lParam);
-                pt.y = GET_Y_LPARAM(lParam);
-                ScreenToClient(hwnd, &pt);
-                
-                RECT rcClient;
-                GetClientRect(hwnd, &rcClient);
-                
-                // Define borders for resizing (8 pixels)
-                const int border = 8;
-                
-                // Top-left corner
-                if (pt.x < border && pt.y < border)
-                    return HTTOPLEFT;
-                // Top-right corner
-                else if (pt.x >= rcClient.right - border && pt.y < border)
-                    return HTTOPRIGHT;
-                // Bottom-left corner
-                else if (pt.x < border && pt.y >= rcClient.bottom - border)
-                    return HTBOTTOMLEFT;
-                // Bottom-right corner
-                else if (pt.x >= rcClient.right - border && pt.y >= rcClient.bottom - border)
-                    return HTBOTTOMRIGHT;
-                // Top edge
-                else if (pt.y < border)
-                    return HTTOP;
-                // Bottom edge
-                else if (pt.y >= rcClient.bottom - border)
-                    return HTBOTTOM;
-                // Left edge
-                else if (pt.x < border)
-                    return HTLEFT;
-                // Right edge
-                else if (pt.x >= rcClient.right - border)
-                    return HTRIGHT;
-                // Caption area (top 40 pixels for dragging)
-                else if (pt.y < 40)
-                    return HTCAPTION;
-                
-                return HTCLIENT;
-            }
                 
             default:
                 return DefWindowProc(hwnd, message, wParam, lParam);

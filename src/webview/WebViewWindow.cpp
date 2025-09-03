@@ -342,14 +342,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             line-height: 20px;
         }
         
-        .app-container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 24px;
-            background: #ededed;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        }
+        /* app-container removed - redundant with app-window */
         
         h1 {
             font-size: 28px;
@@ -478,28 +471,57 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             border-radius: 50%;
         }
         
-        button {
-            background: #0078d4;
-            border: none;
-            color: #ffffff;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s ease;
+        /* Toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
         }
         
-        button:hover {
-            background: #0067c0;
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #0078d4;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
         }
     </style>
 </head>)HTML";
     
     // Part 2: Body content with Fluent Design layout
     html += LR"HTML(<body>
-    <div class="app-container">
-        <h1>Mouse2VR Treadmill Bridge</h1>
+    <h1>Mouse2VR Treadmill Bridge</h1>
         
         <div class="side-by-side">
             <div>
@@ -519,7 +541,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                             <span class="status-value" id="stickValue">0%</span>
                         </div>
                         <div class="status-metric">
-                            <span class="status-label">Update Rate</span>
+                            <span class="status-label">Actual Update Rate</span>
                             <span class="status-value" id="updateRateValue">0 Hz</span>
                         </div>
                     </div>
@@ -539,7 +561,6 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         <div class="section-label">Walking Speed Over Time</div>
         <div class="chart-card">
-            <div class="chart-description">Shows treadmill belt speed converted into meters per second.</div>
             <div class="chart-placeholder">
                 <canvas id="speedCanvas"></canvas>
             </div>
@@ -556,12 +577,11 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         <div class="setting-card">
             <div class="setting-row">
-                <span class="setting-label">Update Rate</span>
+                <span class="setting-label">Target Update Rate</span>
                 <div class="radio-group">
-                    <label><input type="radio" name="rate" value="30" onchange="updateRate(30)"> 30 Hz</label>
-                    <label><input type="radio" name="rate" value="50" onchange="updateRate(50)"> 50 Hz</label>
+                    <label><input type="radio" name="rate" value="25" onchange="updateRate(25)"> 25 Hz</label>
+                    <label><input type="radio" name="rate" value="45" onchange="updateRate(45)"> 45 Hz</label>
                     <label><input type="radio" name="rate" value="60" checked onchange="updateRate(60)"> 60 Hz</label>
-                    <label><input type="radio" name="rate" value="100" onchange="updateRate(100)"> 100 Hz</label>
                 </div>
             </div>
         </div>
@@ -577,10 +597,14 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             </div>
         </div>
         
-        <div class="setting-row" style="justify-content: center; margin-top: 16px;">
-            <button onclick="toggleRunning()" id="startStopBtn">Start</button>
+        <div class="setting-row">
+            <span class="setting-label">Enable Virtual Controller</span>
+            <label class="switch">
+                <input type="checkbox" id="enableController" checked onchange="toggleRunning()">
+                <span class="slider"></span>
+            </label>
         </div>
-    </div>)HTML";
+    )HTML";
     
     // Part 3: JavaScript with Fluent Design interactions
     html += LR"HTML(
@@ -594,20 +618,23 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         window.addEventListener('DOMContentLoaded', () => {
             initializeStickCanvas();
             initializeSpeedCanvas();
+            
+            // Start controller automatically since toggle is on by default
+            if (window.mouse2vr) {
+                toggleRunning();
+            }
         });
         
         function toggleRunning() {
-            isRunning = !isRunning;
-            const btn = document.getElementById('startStopBtn');
+            const checkbox = document.getElementById('enableController');
+            isRunning = checkbox.checked;
             
             if (isRunning) {
                 window.mouse2vr.start();
-                btn.textContent = 'Stop';
                 document.getElementById('statusValue').textContent = 'Running';
                 document.getElementById('statusValue').style.color = '#0f7938';
             } else {
                 window.mouse2vr.stop();
-                btn.textContent = 'Start';
                 document.getElementById('statusValue').textContent = 'Stopped';
                 document.getElementById('statusValue').style.color = '#c42b1c';
             }
@@ -621,11 +648,18 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         function updateRate(value) {
             document.getElementById('updateRateValue').textContent = value + ' Hz';
+            
+            // Map UI values to backend values for better actual performance
+            let backendHz = value;
+            if (value === 25) backendHz = 36;
+            else if (value === 45) backendHz = 70;
+            else if (value === 60) backendHz = 94;
+            
             if (window.mouse2vr) {
-                window.mouse2vr.setUpdateRate(value);
+                window.mouse2vr.setUpdateRate(backendHz);
             }
-            // Update polling rate to match
-            startPolling(value);
+            // Update polling rate to match backend rate
+            startPolling(backendHz);
         }
         
         function updateAxisOptions() {
@@ -840,7 +874,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             ctx.stroke();
             
             ctx.fillStyle = '#1a1a1a';
-            ctx.fillText('Game (× sensitivity)', legendX + 25, legendY + 29);
+            ctx.fillText('Game (with sensitivity)', legendX + 25, legendY + 29);
         }
         
         // Request speed updates periodically

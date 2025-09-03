@@ -215,23 +215,33 @@ int Mouse2VRCore::GetActualUpdateRate() const {
 void Mouse2VRCore::ProcessingLoop() {
     LOG_DEBUG("Core", "ProcessingLoop started with target rate: " + std::to_string(m_updateRateHz.load()) + " Hz");
     
+    // Use high precision timing with microseconds
+    using clock = std::chrono::steady_clock;
+    using microseconds = std::chrono::microseconds;
+    
+    auto nextUpdate = clock::now();
+    
     while (m_isRunning) {
-        auto loopStart = std::chrono::steady_clock::now();
+        // Calculate interval in microseconds for better precision
+        int targetHz = m_updateRateHz.load();
+        auto intervalUs = microseconds(1000000 / targetHz);
         
+        // Schedule next update time BEFORE processing
+        nextUpdate += intervalUs;
+        
+        // Do the actual work
         UpdateController();
         
-        // Use dynamic update rate
-        int targetHz = m_updateRateHz.load();
-        int intervalMs = 1000 / targetHz;
+        // Sleep until next scheduled update
+        // Use sleep_until for more precise timing
+        std::this_thread::sleep_until(nextUpdate);
         
-        // Calculate time already spent in this iteration
-        auto loopEnd = std::chrono::steady_clock::now();
-        auto processingTime = std::chrono::duration_cast<std::chrono::milliseconds>(loopEnd - loopStart).count();
-        
-        // Sleep for remaining time to hit target rate
-        int sleepMs = intervalMs - processingTime;
-        if (sleepMs > 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+        // If we're running behind, catch up without sleeping
+        auto now = clock::now();
+        if (now > nextUpdate) {
+            // We're running behind schedule, reset to avoid spiral
+            nextUpdate = now;
+            LOG_DEBUG("Core", "Processing loop running behind, resetting schedule");
         }
     }
     

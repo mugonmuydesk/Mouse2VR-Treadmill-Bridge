@@ -71,6 +71,7 @@ private:
     
     // Timing
     std::chrono::steady_clock::time_point m_lastUpdate;
+    std::atomic<int> m_updateRateHz{60};  // Default 60Hz
     
     // Internal methods
     void ProcessingLoop();

@@ -230,12 +230,26 @@ void WebViewWindow::RegisterEventHandlers() {
                     double value = std::stod(msg.substr(15));
                     m_core->SetSensitivity(value);
                     LOG_INFO("WebView", "Set sensitivity to: " + std::to_string(value));
+                } else if (msg.find(L"setUpdateRate:") == 0) {
+                    int value = std::stoi(msg.substr(14));
+                    m_core->SetUpdateRate(value);
+                    LOG_INFO("WebView", "Set update rate to: " + std::to_string(value) + " Hz");
+                } else if (msg.find(L"setInvertY:") == 0) {
+                    bool value = (msg.substr(11) == L"true");
+                    m_core->SetInvertY(value);
+                    LOG_INFO("WebView", "Set invert Y to: " + std::string(value ? "true" : "false"));
+                } else if (msg.find(L"setLockX:") == 0) {
+                    bool value = (msg.substr(9) == L"true");
+                    m_core->SetLockX(value);
+                    LOG_INFO("WebView", "Set lock X to: " + std::string(value ? "true" : "false"));
                 } else if (msg == L"getStatus") {
                     bool isRunning = m_core->IsRunning();
                     ExecuteScript(L"updateStatus(" + std::wstring(isRunning ? L"true" : L"false") + L")");
                 } else if (msg == L"getSpeed") {
                     auto state = m_core->GetCurrentState();
-                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(state.speed) + L")";
+                    // Send both speed and stick Y position
+                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(state.speed) + 
+                                              L", " + std::to_wstring(state.stickY) + L")";
                     ExecuteScript(speedUpdate);
                 } else if (msg == L"start") {
                     m_core->Start();
@@ -262,6 +276,15 @@ void WebViewWindow::InjectInitialScript() {
         window.mouse2vr = {
             setSensitivity: function(value) {
                 window.chrome.webview.postMessage('setSensitivity:' + value);
+            },
+            setUpdateRate: function(value) {
+                window.chrome.webview.postMessage('setUpdateRate:' + value);
+            },
+            setInvertY: function(value) {
+                window.chrome.webview.postMessage('setInvertY:' + value);
+            },
+            setLockX: function(value) {
+                window.chrome.webview.postMessage('setLockX:' + value);
             },
             getStatus: function() {
                 window.chrome.webview.postMessage('getStatus');
@@ -588,7 +611,9 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         function updateRate(value) {
             document.getElementById('updateRateValue').textContent = value + ' Hz';
-            // TODO: Implement actual rate update
+            if (window.mouse2vr) {
+                window.mouse2vr.setUpdateRate(value);
+            }
         }
         
         function updateAxisOptions() {
@@ -596,17 +621,28 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             const lockX = document.getElementById('lockX').checked;
             const adaptive = document.getElementById('adaptive').checked;
             
-            // TODO: Send these settings to backend
-            console.log('Axis options:', { invertY, lockX, adaptive });
+            // Send settings to backend
+            if (window.mouse2vr) {
+                window.mouse2vr.setInvertY(invertY);
+                window.mouse2vr.setLockX(lockX);
+                // Adaptive mode not yet implemented in backend
+                console.log('Adaptive mode:', adaptive);
+            }
         }
         
         // Update speed and stick displays
-        function updateSpeed(speed) {
+        function updateSpeed(speed, stickY) {
             // Update speed value
             document.getElementById('speedValue').textContent = speed.toFixed(2) + ' m/s';
             
-            // Update stick percentage (assuming max speed of 2 m/s)
-            const stickPercent = Math.min(100, (speed / 2.0) * 100);
+            // Use actual stick Y value if provided, otherwise calculate from speed
+            let stickPercent;
+            if (stickY !== undefined) {
+                stickPercent = Math.abs(stickY) * 100;
+            } else {
+                // Fallback: estimate from speed (assuming max speed of 2 m/s)
+                stickPercent = Math.min(100, (speed / 2.0) * 100);
+            }
             document.getElementById('stickValue').textContent = Math.round(stickPercent) + '%';
             
             // Calculate update rate
@@ -615,8 +651,9 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             lastUpdateTime = now;
             document.getElementById('updateRateValue').textContent = Math.round(hz) + ' Hz';
             
-            // Update visualizations
-            updateStickVisualization(stickPercent / 100);
+            // Update visualizations with actual stick position
+            const stickValue = stickY !== undefined ? stickY : (stickPercent / 100);
+            updateStickVisualization(stickValue);
             addSpeedToHistory(speed);
         }
         
@@ -658,9 +695,9 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             ctx.clearRect(0, 0, w, h);
             drawStickBase(ctx, w, h);
             
-            // Draw stick position
+            // Draw stick position (value ranges from -1 to 1)
             const radius = Math.min(w, h) * 0.4;
-            const y = h/2 - (value * radius);
+            const y = h/2 - (value * radius); // Negative = down, positive = up
             
             ctx.fillStyle = '#0078d4';
             ctx.beginPath();

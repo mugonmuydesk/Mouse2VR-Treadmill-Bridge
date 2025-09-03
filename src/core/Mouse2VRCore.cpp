@@ -78,6 +78,11 @@ bool Mouse2VRCore::Initialize(HWND hwnd) {
     procConfig.countsPerMeter = 1000.0f; // Default value
     m_processor->SetConfig(procConfig);
     
+    // Set update rate from config
+    if (config.updateIntervalMs > 0) {
+        m_updateRateHz = 1000 / config.updateIntervalMs;
+    }
+    
     m_isInitialized = true;
     LOG_INFO("Core", "Mouse2VR Core initialized successfully");
     return true;
@@ -141,11 +146,22 @@ double Mouse2VRCore::GetSensitivity() const {
 
 void Mouse2VRCore::SetUpdateRate(int hz) {
     LOG_INFO("Core", "Setting update rate to: " + std::to_string(hz) + " Hz");
-    // TODO: Implement
+    // Clamp to reasonable range
+    if (hz < 10) hz = 10;
+    if (hz > 200) hz = 200;
+    m_updateRateHz = hz;
+    
+    // Also save to config
+    if (m_config) {
+        auto cfg = m_config->GetConfig();
+        cfg.updateIntervalMs = 1000 / hz;  // Convert Hz to milliseconds
+        m_config->SetConfig(cfg);
+        m_config->Save();
+    }
 }
 
 int Mouse2VRCore::GetUpdateRate() const {
-    return 60; // TODO: Implement
+    return m_updateRateHz;
 }
 
 void Mouse2VRCore::SetInvertY(bool invert) {
@@ -192,10 +208,11 @@ int Mouse2VRCore::GetActualUpdateRate() const {
 }
 
 void Mouse2VRCore::ProcessingLoop() {
-    // TODO: Implement main processing loop
     while (m_isRunning) {
         UpdateController();
-        std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60Hz
+        // Use dynamic update rate
+        int intervalMs = 1000 / m_updateRateHz;
+        std::this_thread::sleep_for(std::chrono::milliseconds(intervalMs));
     }
 }
 

@@ -1,4 +1,5 @@
 #include "core/RawInputHandler.h"
+#include "common/Logger.h"
 #include <vector>
 #include <iostream>
 
@@ -90,6 +91,12 @@ void RawInputHandler::ProcessRawInput(LPARAM lParam) {
         std::lock_guard<std::mutex> lock(m_deltaMutex);
         m_accumulatedDeltas.x += raw->data.mouse.lLastX;
         m_accumulatedDeltas.y += raw->data.mouse.lLastY;
+        
+        // Debug logging for raw input
+        if (raw->data.mouse.lLastY != 0) {
+            LOG_DEBUG("RawInput", "Raw mouse Y: " + std::to_string(raw->data.mouse.lLastY) + 
+                      " (accumulated: " + std::to_string(m_accumulatedDeltas.y) + ")");
+        }
     }
 }
 

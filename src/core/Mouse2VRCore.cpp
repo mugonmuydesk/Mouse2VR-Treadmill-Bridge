@@ -251,10 +251,11 @@ void Mouse2VRCore::UpdateController() {
     }
     
     // Debug logging for significant movement
-    if (delta.y != 0) {
-        LOG_DEBUG("Core", "Mouse Y:" + std::to_string(delta.y) + 
-                          " Speed:" + std::to_string(m_processor->GetSpeedMetersPerSecond()) +
-                          " StickY:" + std::to_string(stickY));
+    if (delta.y != 0 || delta.x != 0) {
+        LOG_DEBUG("Core", "UpdateController: deltaY=" + std::to_string(delta.y) + 
+                          " -> stickY=" + std::to_string(stickY) +
+                          " (speed=" + std::to_string(m_processor->GetSpeedMetersPerSecond()) + " m/s)" +
+                          " [" + (stickY > 0 ? "FORWARD" : stickY < 0 ? "BACKWARD" : "STOPPED") + "]");
     }
 }
 

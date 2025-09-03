@@ -1,4 +1,5 @@
 #include "core/InputProcessor.h"
+#include "common/Logger.h"
 #include <cmath>
 #include <algorithm>
 
@@ -13,15 +14,30 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, floa
     float x = delta.x * m_config.sensitivity / 100.0f;  // Changed from 1000 to 100 for better scaling
     float y = delta.y * m_config.sensitivity / 100.0f;
     
+    // Debug logging for input processing
+    if (delta.y != 0) {
+        LOG_DEBUG("Processor", "Input deltaY=" + std::to_string(delta.y) + 
+                  " -> scaled=" + std::to_string(y));
+    }
+    
     // Note: Mouse forward (away from user) = negative delta.y
     //       Mouse backward (toward user) = positive delta.y
     // We want: forward = positive stick, backward = negative stick
     // So we need to invert the Y axis by default
     y = -y;  // Invert so forward mouse = positive stick
     
+    if (delta.y != 0) {
+        LOG_DEBUG("Processor", "After inversion: y=" + std::to_string(y));
+    }
+    
     // Apply user inversion preferences (on top of default inversion)
     if (m_config.invertX) x = -x;
-    if (m_config.invertY) y = -y;
+    if (m_config.invertY) {
+        y = -y;
+        if (delta.y != 0) {
+            LOG_DEBUG("Processor", "After user invert: y=" + std::to_string(y));
+        }
+    }
     
     // Apply axis locks
     if (m_config.lockX) x = 0.0f;

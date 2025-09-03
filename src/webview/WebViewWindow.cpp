@@ -679,7 +679,10 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                 </label>
             </div>
         </div>
-        
+    )HTML";
+    
+    // Part 2b: Diagnostics section (split to avoid MSVC string size limit)
+    html += LR"HTML(
         <div class="section-label">Diagnostics</div>
         
         <div class="setting-card">

@@ -751,7 +751,12 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                 window.mouse2vr.setSensitivity(parseFloat(value));
             }
         }
-        
+    </script>
+    )HTML";
+    
+    // Part 3b: JavaScript settings functions (split to avoid MSVC string size limit)  
+    html += LR"HTML(
+    <script>
         function updateDPI(value) {
             currentDPI = value;
             if (window.mouse2vr) {

@@ -247,8 +247,14 @@ void WebViewWindow::RegisterEventHandlers() {
                     ExecuteScript(L"updateStatus(" + std::wstring(isRunning ? L"true" : L"false") + L")");
                 } else if (msg == L"getSpeed") {
                     auto state = m_core->GetCurrentState();
-                    // Send both speed and stick Y position
-                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(state.speed) + 
+                    // Calculate signed speed (positive = forward, negative = backward)
+                    double signedSpeed = state.stickY >= 0 ? state.speed : -state.speed;
+                    // Game speed is stick deflection * max game speed (preserving direction)
+                    // This shows the effective movement speed in game after sensitivity
+                    double gameSpeed = state.stickY * 3.0; // Scale to max 3 m/s at full stick deflection
+                    // Send speed, game speed, and stick Y position
+                    std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(signedSpeed) + 
+                                              L", " + std::to_wstring(gameSpeed) +
                                               L", " + std::to_wstring(state.stickY) + L")";
                     ExecuteScript(speedUpdate);
                 } else if (msg == L"start") {
@@ -577,7 +583,8 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
     html += LR"HTML(
     <script>
         let isRunning = false;
-        let speedHistory = [];
+        let treadmillSpeedHistory = [];
+        let gameSpeedHistory = [];
         let lastUpdateTime = Date.now();
         
         // Initialize canvases when page loads
@@ -631,17 +638,14 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         }
         
         // Update speed and stick displays
-        function updateSpeed(speed, stickY) {
-            // Update speed value
-            document.getElementById('speedValue').textContent = speed.toFixed(2) + ' m/s';
+        function updateSpeed(treadmillSpeed, gameSpeed, stickY) {
+            // Update speed value (show absolute for display)
+            document.getElementById('speedValue').textContent = Math.abs(treadmillSpeed).toFixed(2) + ' m/s';
             
-            // Use actual stick Y value if provided, otherwise calculate from speed
-            let stickPercent;
+            // Use actual stick Y value if provided
+            let stickPercent = 0;
             if (stickY !== undefined) {
                 stickPercent = Math.abs(stickY) * 100;
-            } else {
-                // Fallback: estimate from speed (assuming max speed of 2 m/s)
-                stickPercent = Math.min(100, (speed / 2.0) * 100);
             }
             document.getElementById('stickValue').textContent = Math.round(stickPercent) + '%';
             
@@ -652,9 +656,12 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             document.getElementById('updateRateValue').textContent = Math.round(hz) + ' Hz';
             
             // Update visualizations with actual stick position
-            const stickValue = stickY !== undefined ? stickY : (stickPercent / 100);
-            updateStickVisualization(stickValue);
-            addSpeedToHistory(speed);
+            if (stickY !== undefined) {
+                updateStickVisualization(stickY);
+            }
+            
+            // Add both speeds to history (with sign for direction)
+            addSpeedToHistory(treadmillSpeed, gameSpeed);
         }
         
         function initializeStickCanvas() {
@@ -714,15 +721,22 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             
             // Initialize with empty history
             for (let i = 0; i < 50; i++) {
-                speedHistory.push(0);
+                treadmillSpeedHistory.push(0);
+                gameSpeedHistory.push(0);
             }
         }
         
-        function addSpeedToHistory(speed) {
-            speedHistory.push(speed);
-            if (speedHistory.length > 50) {
-                speedHistory.shift();
+        function addSpeedToHistory(treadmillSpeed, gameSpeed) {
+            treadmillSpeedHistory.push(treadmillSpeed);
+            gameSpeedHistory.push(gameSpeed);
+            
+            if (treadmillSpeedHistory.length > 50) {
+                treadmillSpeedHistory.shift();
             }
+            if (gameSpeedHistory.length > 50) {
+                gameSpeedHistory.shift();
+            }
+            
             drawSpeedGraph();
         }
         
@@ -736,14 +750,24 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             
             ctx.clearRect(0, 0, w, h);
             
-            // Draw graph
-            ctx.strokeStyle = '#0078d4';
+            // Draw center line (zero speed)
+            ctx.strokeStyle = '#d2d2d2';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([2, 2]);
+            ctx.beginPath();
+            ctx.moveTo(0, h/2);
+            ctx.lineTo(w, h/2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw treadmill speed (physical)
+            ctx.strokeStyle = '#0078d4'; // Microsoft Blue
             ctx.lineWidth = 2;
             ctx.beginPath();
             
-            speedHistory.forEach((speed, i) => {
-                const x = (i / (speedHistory.length - 1)) * w;
-                const y = h - ((speed / 2) * h); // Scale for max 2 m/s
+            treadmillSpeedHistory.forEach((speed, i) => {
+                const x = (i / (treadmillSpeedHistory.length - 1)) * w;
+                const y = h/2 - ((speed / 3) * (h/2)); // Scale: 3 m/s = full height
                 
                 if (i === 0) {
                     ctx.moveTo(x, y);
@@ -751,8 +775,59 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                     ctx.lineTo(x, y);
                 }
             });
-            
             ctx.stroke();
+            
+            // Draw game speed (after sensitivity)
+            ctx.strokeStyle = '#10893e'; // Microsoft Green
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.8; // Slight transparency
+            ctx.beginPath();
+            
+            gameSpeedHistory.forEach((speed, i) => {
+                const x = (i / (gameSpeedHistory.length - 1)) * w;
+                const y = h/2 - ((speed / 3) * (h/2)); // Same scale
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+            
+            // Draw legend (Fluent Design style)
+            const legendX = w - 140;
+            const legendY = 10;
+            
+            // Semi-transparent background
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(legendX - 5, legendY - 5, 135, 45);
+            
+            // Legend items
+            ctx.font = '12px "Segoe UI", sans-serif';
+            
+            // Treadmill speed
+            ctx.strokeStyle = '#0078d4';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(legendX, legendY + 8);
+            ctx.lineTo(legendX + 20, legendY + 8);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillText('Treadmill', legendX + 25, legendY + 12);
+            
+            // Game speed
+            ctx.strokeStyle = '#10893e';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(legendX, legendY + 25);
+            ctx.lineTo(legendX + 20, legendY + 25);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillText('Game (× sensitivity)', legendX + 25, legendY + 29);
         }
         
         // Request speed updates periodically

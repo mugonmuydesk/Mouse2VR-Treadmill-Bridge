@@ -319,11 +319,13 @@ private:
                 break;
             case ID_TRAY_START:
                 m_core->Start();
-                m_webView->ExecuteScript(L"updateStatus('running')");
+                m_webView->ExecuteScript(L"updateStatus(true)");
+                LOG_INFO("App", "Started from system tray");
                 break;
             case ID_TRAY_STOP:
                 m_core->Stop();
-                m_webView->ExecuteScript(L"updateStatus('stopped')");
+                m_webView->ExecuteScript(L"updateStatus(false)");
+                LOG_INFO("App", "Stopped from system tray");
                 break;
             case ID_TRAY_EXIT:
                 DestroyWindow(m_hwnd);

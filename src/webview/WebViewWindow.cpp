@@ -229,9 +229,20 @@ void WebViewWindow::RegisterEventHandlers() {
                 if (msg.find(L"setSensitivity:") == 0) {
                     double value = std::stod(msg.substr(15));
                     m_core->SetSensitivity(value);
+                    LOG_INFO("WebView", "Set sensitivity to: " + std::to_string(value));
                 } else if (msg == L"getStatus") {
                     bool isRunning = m_core->IsRunning();
                     ExecuteScript(L"updateStatus(" + std::wstring(isRunning ? L"true" : L"false") + L")");
+                } else if (msg == L"start") {
+                    m_core->Start();
+                    LOG_INFO("WebView", "Started Mouse2VR core");
+                    // Update UI status
+                    ExecuteScript(L"updateStatus(true)");
+                } else if (msg == L"stop") {
+                    m_core->Stop();
+                    LOG_INFO("WebView", "Stopped Mouse2VR core");
+                    // Update UI status
+                    ExecuteScript(L"updateStatus(false)");
                 }
                 
                 return S_OK;

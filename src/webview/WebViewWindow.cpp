@@ -237,6 +237,10 @@ void WebViewWindow::RegisterEventHandlers() {
                     auto state = m_core->GetCurrentState();
                     std::wstring speedUpdate = L"updateSpeed(" + std::to_wstring(state.speed) + L")";
                     ExecuteScript(speedUpdate);
+                } else if (msg == L"minimize") {
+                    ShowWindow(m_parentWindow, SW_MINIMIZE);
+                } else if (msg == L"close") {
+                    PostMessage(m_parentWindow, WM_CLOSE, 0, 0);
                 } else if (msg == L"start") {
                     m_core->Start();
                     LOG_INFO("WebView", "Started Mouse2VR core");
@@ -274,6 +278,12 @@ void WebViewWindow::InjectInitialScript() {
             },
             getSpeed: function() {
                 window.chrome.webview.postMessage('getSpeed');
+            },
+            minimize: function() {
+                window.chrome.webview.postMessage('minimize');
+            },
+            close: function() {
+                window.chrome.webview.postMessage('close');
             }
         };
         
@@ -308,8 +318,62 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             font-family: 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 20px;
+            padding: 0;
+            margin: 0;
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .drag-bar {
+            height: 40px;
+            background: rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            -webkit-app-region: drag;
+            user-select: none;
+        }
+        
+        .drag-bar h1 {
+            font-size: 1.2em;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 10px;
+            -webkit-app-region: no-drag;
+        }
+        
+        .window-control-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .window-control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .window-control-btn.close:hover {
+            background: rgba(232, 17, 35, 0.9);
+        }
+        
+        .main-content {
+            flex: 1;
+            padding: 20px;
         }
         
         .container {
@@ -317,12 +381,6 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             margin: 0 auto;
         }
         
-        h1 {
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-        }
         
         .dashboard {
             display: grid;
@@ -398,10 +456,16 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="drag-bar">
         <h1>🏃 Mouse2VR Treadmill Bridge</h1>
-        
-        <div class="dashboard">
+        <div class="window-controls">
+            <button class="window-control-btn" onclick="minimizeWindow()">−</button>
+            <button class="window-control-btn close" onclick="closeWindow()">×</button>
+        </div>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <div class="dashboard">
             <div class="card">
                 <h2>Status</h2>
                 <p style="margin-top: 15px;">
@@ -443,6 +507,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                 <div id="debugInfo" style="font-family: monospace; font-size: 0.9em;">
                     Waiting for data...
                 </div>
+            </div>
             </div>
         </div>
     </div>
@@ -496,6 +561,19 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                 window.mouse2vr.getSpeed();
             }
         }, 100);
+        
+        // Window control functions
+        function minimizeWindow() {
+            if (window.mouse2vr && window.mouse2vr.minimize) {
+                window.mouse2vr.minimize();
+            }
+        }
+        
+        function closeWindow() {
+            if (window.mouse2vr && window.mouse2vr.close) {
+                window.mouse2vr.close();
+            }
+        }
         
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {

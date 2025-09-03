@@ -414,13 +414,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         .setting-label {
             font-size: 14px;
             line-height: 20px;
-            margin-left: 8px;
-        }
-        
-        .setting-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            font-weight: 500;
         }
         
         input[type="range"] {
@@ -466,12 +460,6 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         button:hover {
             background: #0067c0;
-        }
-        
-        .icon {
-            font-size: 18px;
-            width: 20px;
-            text-align: center;
         }
     </style>
 </head>)HTML";
@@ -529,20 +517,14 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         <div class="setting-card">
             <div class="setting-row">
-                <div class="setting-left">
-                    <span class="icon">🎚️</span>
-                    <span class="setting-label">Sensitivity</span>
-                </div>
+                <span class="setting-label">Sensitivity</span>
                 <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0" onchange="updateSensitivity(this.value)" />
             </div>
         </div>
         
         <div class="setting-card">
             <div class="setting-row">
-                <div class="setting-left">
-                    <span class="icon">📡</span>
-                    <span class="setting-label">Update Rate</span>
-                </div>
+                <span class="setting-label">Update Rate</span>
                 <div class="radio-group">
                     <label><input type="radio" name="rate" value="30" onchange="updateRate(30)"> 30 Hz</label>
                     <label><input type="radio" name="rate" value="50" onchange="updateRate(50)"> 50 Hz</label>
@@ -554,10 +536,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         
         <div class="setting-card">
             <div class="setting-row">
-                <div class="setting-left">
-                    <span class="icon">🎛️</span>
-                    <span class="setting-label">Axis Options</span>
-                </div>
+                <span class="setting-label">Axis Options</span>
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="invertY" onchange="updateAxisOptions()"> Invert Y Axis</label>
                     <label><input type="checkbox" id="lockX" checked onchange="updateAxisOptions()"> Lock X Axis</label>

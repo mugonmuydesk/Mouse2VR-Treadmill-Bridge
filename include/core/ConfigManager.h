@@ -15,7 +15,7 @@ struct AppConfig {
     bool lockX = true;  // Default: lock X for treadmill
     bool lockY = false;
     float maxSpeed = 1.0f;
-    float countsPerMeter = 1000.0f;
+    float countsPerMeter = 39370.1f;  // Default: 1000 DPI * 39.3701 inches/meter
     
     // Update settings
     int updateIntervalMs = 20;  // 50Hz default

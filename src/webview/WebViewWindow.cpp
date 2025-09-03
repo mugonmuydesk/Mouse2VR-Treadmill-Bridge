@@ -719,6 +719,11 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             initializeStickCanvas();
             initializeSpeedCanvas();
             
+            // Initialize DPI setting (default 1000)
+            if (window.mouse2vr) {
+                window.mouse2vr.setDPI(currentDPI);
+            }
+            
             // Start controller automatically since toggle is on by default
             if (window.mouse2vr) {
                 toggleRunning();

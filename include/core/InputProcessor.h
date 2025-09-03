@@ -14,7 +14,7 @@ struct ProcessingConfig {
     float maxSpeed = 1.0f;         // Maximum stick deflection (0.0 to 1.0)
     
     // Calibration values
-    float countsPerMeter = 1000.0f;  // Mouse counts per meter of treadmill movement
+    float countsPerMeter = 39370.1f;  // Default: 1000 DPI * 39.3701 inches/meter
 };
 
 class InputProcessor {

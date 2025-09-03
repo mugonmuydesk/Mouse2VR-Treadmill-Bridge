@@ -299,8 +299,11 @@ void WebViewWindow::SetupJavaScriptBridge() {
 }
 
 std::wstring WebViewWindow::GetEmbeddedHTML() {
-    // For now, return embedded HTML. Later this can load from resources
-    return LR"HTML(
+    // Build HTML in parts to avoid compiler string size limits
+    std::wstring html;
+    
+    // Part 1: DOCTYPE and head start
+    html += LR"HTML(
 <!DOCTYPE html>
 <html>
 <head>
@@ -454,8 +457,10 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             gap: 15px;
         }
     </style>
-</head>
-<body>
+</head>)HTML";
+    
+    // Part 2: Body content
+    html += LR"HTML(<body>
     <div class="drag-bar">
         <h1>🏃 Mouse2VR Treadmill Bridge</h1>
         <div class="window-controls">
@@ -510,8 +515,10 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             </div>
             </div>
         </div>
-    </div>
+    </div>)HTML";
     
+    // Part 3: JavaScript
+    html += LR"HTML(
     <script>
         let isRunning = false;
         
@@ -584,6 +591,7 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         });
     </script>
 </body>
-</html>
-    )HTML";
+</html>)HTML";
+    
+    return html;
 }

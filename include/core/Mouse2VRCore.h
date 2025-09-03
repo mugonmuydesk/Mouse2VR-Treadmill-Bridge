@@ -2,6 +2,10 @@
 #include <memory>
 #include <atomic>
 #include <mutex>
+#include <chrono>
+
+// Include Windows.h for HWND
+#include "common/WindowsHeaders.h"
 
 namespace Mouse2VR {
 
@@ -27,6 +31,7 @@ public:
     
     // Lifecycle
     bool Initialize();
+    bool Initialize(HWND hwnd);
     void Start();
     void Stop();
     void Shutdown();
@@ -48,6 +53,9 @@ public:
     double GetAverageSpeed() const;
     int GetActualUpdateRate() const;
     
+    // Internal access for WM_INPUT processing
+    RawInputHandler* GetInputHandler() const { return m_inputHandler.get(); }
+    
 private:
     std::unique_ptr<RawInputHandler> m_inputHandler;
     std::unique_ptr<ViGEmController> m_controller;
@@ -60,6 +68,9 @@ private:
     // Current state
     mutable std::mutex m_stateMutex;
     ControllerState m_currentState;
+    
+    // Timing
+    std::chrono::steady_clock::time_point m_lastUpdate;
     
     // Internal methods
     void ProcessingLoop();

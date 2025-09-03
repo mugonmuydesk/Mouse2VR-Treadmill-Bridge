@@ -13,6 +13,7 @@
 #include "SystemTray.h"
 #include "WebViewWindow.h"
 #include "core/Mouse2VRCore.h"
+#include "core/RawInputHandler.h"
 #include "common/Logger.h"
 
 using namespace Microsoft::WRL;
@@ -108,12 +109,8 @@ public:
             return false;
         }
         
-        // Initialize core functionality
+        // Initialize core functionality (delay initialization until window is created)
         m_core = std::make_unique<Mouse2VR::Mouse2VRCore>();
-        if (!m_core->Initialize()) {
-            LOG_ERROR("App", "Failed to initialize Mouse2VR core");
-            return false;
-        }
         
         // Register window class
         WNDCLASSEXW wcex = {};
@@ -151,6 +148,12 @@ public:
         
         if (!m_hwnd) {
             LOG_ERROR("App", "Failed to create window");
+            return false;
+        }
+        
+        // Initialize core with window handle for RawInput
+        if (!m_core->Initialize(m_hwnd)) {
+            LOG_ERROR("App", "Failed to initialize Mouse2VR core");
             return false;
         }
         
@@ -262,6 +265,17 @@ private:
                 
             case WM_TRAYICON:
                 return HandleTrayMessage(wParam, lParam);
+                
+            case WM_INPUT: {
+                // Process raw input for mouse movement
+                if (m_core) {
+                    auto inputHandler = m_core->GetInputHandler();
+                    if (inputHandler) {
+                        inputHandler->ProcessRawInput(lParam);
+                    }
+                }
+                return 0;
+            }
                 
             default:
                 break;

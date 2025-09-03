@@ -20,7 +20,8 @@ namespace Mouse2VR {
 
 Mouse2VRCore::Mouse2VRCore() 
     : m_isRunning(false)
-    , m_isInitialized(false) {
+    , m_isInitialized(false)
+    , m_lastUpdate(std::chrono::steady_clock::now()) {
 }
 
 Mouse2VRCore::~Mouse2VRCore() {
@@ -28,6 +29,11 @@ Mouse2VRCore::~Mouse2VRCore() {
 }
 
 bool Mouse2VRCore::Initialize() {
+    // Default initialization without window handle
+    return Initialize(nullptr);
+}
+
+bool Mouse2VRCore::Initialize(HWND hwnd) {
     if (m_isInitialized) {
         return true;
     }
@@ -39,6 +45,38 @@ bool Mouse2VRCore::Initialize() {
     m_controller = std::make_unique<ViGEmController>();
     m_processor = std::make_unique<InputProcessor>();
     m_config = std::make_unique<ConfigManager>();
+    
+    // Initialize RawInputHandler with window handle if provided
+    if (hwnd) {
+        if (!m_inputHandler->Initialize(hwnd)) {
+            LOG_ERROR("Core", "Failed to initialize RawInputHandler");
+            return false;
+        }
+        LOG_INFO("Core", "RawInputHandler initialized with window handle");
+    }
+    
+    // Initialize ViGEmController
+    if (!m_controller->Initialize()) {
+        LOG_ERROR("Core", "Failed to initialize ViGEmController");
+        return false;
+    }
+    LOG_INFO("Core", "Virtual Xbox 360 controller created");
+    
+    // Load configuration and apply to processor
+    if (m_config->Load()) {
+        LOG_INFO("Core", "Configuration loaded from file");
+    } else {
+        LOG_INFO("Core", "Using default configuration");
+    }
+    
+    // Apply configuration to processor
+    auto config = m_config->GetConfig();
+    ProcessingConfig procConfig;
+    procConfig.sensitivity = config.sensitivity;
+    procConfig.invertY = config.invertY;
+    procConfig.lockX = config.lockX;
+    procConfig.countsPerMeter = 1000.0f; // Default value
+    m_processor->SetConfig(procConfig);
     
     m_isInitialized = true;
     LOG_INFO("Core", "Mouse2VR Core initialized successfully");
@@ -81,11 +119,24 @@ ControllerState Mouse2VRCore::GetCurrentState() const {
 
 void Mouse2VRCore::SetSensitivity(double sensitivity) {
     LOG_INFO("Core", "Setting sensitivity to: " + std::to_string(sensitivity));
-    // TODO: Implement
+    if (m_processor) {
+        ProcessingConfig config = m_processor->GetConfig();
+        config.sensitivity = static_cast<float>(sensitivity);
+        m_processor->SetConfig(config);
+    }
+    if (m_config) {
+        auto cfg = m_config->GetConfig();
+        cfg.sensitivity = static_cast<float>(sensitivity);
+        m_config->SetConfig(cfg);
+        m_config->Save();
+    }
 }
 
 double Mouse2VRCore::GetSensitivity() const {
-    return 1.0; // TODO: Implement
+    if (m_processor) {
+        return m_processor->GetConfig().sensitivity;
+    }
+    return 1.0;
 }
 
 void Mouse2VRCore::SetUpdateRate(int hz) {
@@ -99,12 +150,32 @@ int Mouse2VRCore::GetUpdateRate() const {
 
 void Mouse2VRCore::SetInvertY(bool invert) {
     LOG_INFO("Core", "Setting invert Y to: " + std::string(invert ? "true" : "false"));
-    // TODO: Implement
+    if (m_processor) {
+        ProcessingConfig config = m_processor->GetConfig();
+        config.invertY = invert;
+        m_processor->SetConfig(config);
+    }
+    if (m_config) {
+        auto cfg = m_config->GetConfig();
+        cfg.invertY = invert;
+        m_config->SetConfig(cfg);
+        m_config->Save();
+    }
 }
 
 void Mouse2VRCore::SetLockX(bool lock) {
     LOG_INFO("Core", "Setting lock X to: " + std::string(lock ? "true" : "false"));
-    // TODO: Implement
+    if (m_processor) {
+        ProcessingConfig config = m_processor->GetConfig();
+        config.lockX = lock;
+        m_processor->SetConfig(config);
+    }
+    if (m_config) {
+        auto cfg = m_config->GetConfig();
+        cfg.lockX = lock;
+        m_config->SetConfig(cfg);
+        m_config->Save();
+    }
 }
 
 double Mouse2VRCore::GetCurrentSpeed() const {
@@ -129,7 +200,45 @@ void Mouse2VRCore::ProcessingLoop() {
 }
 
 void Mouse2VRCore::UpdateController() {
-    // TODO: Implement controller update logic
+    if (!m_inputHandler || !m_processor || !m_controller) {
+        return;
+    }
+    
+    // 1. Get mouse deltas
+    MouseDelta delta = m_inputHandler->GetAndResetDeltas();
+    
+    // 2. Calculate elapsed time
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration<float>(now - m_lastUpdate).count();
+    m_lastUpdate = now;
+    
+    // Skip if no time has passed (prevent division by zero)
+    if (elapsed <= 0.0f) {
+        return;
+    }
+    
+    // 3. Process input
+    float stickX, stickY;
+    m_processor->ProcessDelta(delta, elapsed, stickX, stickY);
+    
+    // 4. Update controller (Y-axis only for treadmill)
+    m_controller->SetLeftStick(0.0f, stickY);
+    m_controller->Update();
+    
+    // 5. Update state for UI
+    {
+        std::lock_guard<std::mutex> lock(m_stateMutex);
+        m_currentState.speed = m_processor->GetSpeedMetersPerSecond();
+        m_currentState.stickX = stickX;
+        m_currentState.stickY = stickY;
+    }
+    
+    // Debug logging for significant movement
+    if (delta.y != 0) {
+        LOG_DEBUG("Core", "Mouse Y:" + std::to_string(delta.y) + 
+                          " Speed:" + std::to_string(m_processor->GetSpeedMetersPerSecond()) +
+                          " StickY:" + std::to_string(stickY));
+    }
 }
 
 } // namespace Mouse2VR

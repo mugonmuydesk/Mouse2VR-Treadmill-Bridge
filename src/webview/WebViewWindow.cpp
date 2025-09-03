@@ -253,6 +253,9 @@ void WebViewWindow::RegisterEventHandlers() {
                     float countsPerMeter = dpi * 39.3701f;
                     m_core->SetCountsPerMeter(countsPerMeter);
                     LOG_INFO("WebView", "Set DPI to: " + std::to_string(dpi) + " (counts/meter: " + std::to_string(countsPerMeter) + ")");
+                } else if (msg == L"startTest") {
+                    m_core->StartMovementTest();
+                    LOG_INFO("WebView", "Started 5-second movement test");
                 } else if (msg == L"getStatus") {
                     bool isRunning = m_core->IsRunning();
                     ExecuteScript(L"updateStatus(" + std::wstring(isRunning ? L"true" : L"false") + L")");
@@ -307,6 +310,9 @@ void WebViewWindow::InjectInitialScript() {
             },
             setDPI: function(value) {
                 window.chrome.webview.postMessage('setDPI:' + value);
+            },
+            startTest: function() {
+                window.chrome.webview.postMessage('startTest');
             },
             getStatus: function() {
                 window.chrome.webview.postMessage('getStatus');
@@ -673,6 +679,25 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                 </label>
             </div>
         </div>
+        
+        <div class="section-label">Diagnostics</div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Movement Test</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button id="testButton" onclick="startMovementTest()" 
+                            style="padding: 8px 16px; background: #0078d4; color: white; border: none; 
+                                   border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                        Run 5-Second Test
+                    </button>
+                    <span id="testStatus" style="font-size: 14px; color: #616161;"></span>
+                </div>
+            </div>
+            <div id="testInfo" style="margin-top: 8px; font-size: 12px; color: #616161; display: none;">
+                Move the treadmill during the test. Results will be logged to logs/debug.log
+            </div>
+        </div>
     </div>
     )HTML";
     
@@ -745,6 +770,47 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             if (window.mouse2vr && !isNaN(currentDPI)) {
                 window.mouse2vr.setDPI(currentDPI);
             }
+        }
+        
+        function startMovementTest() {
+            const button = document.getElementById('testButton');
+            const status = document.getElementById('testStatus');
+            const info = document.getElementById('testInfo');
+            
+            // Disable button and show status
+            button.disabled = true;
+            button.style.background = '#808080';
+            button.style.cursor = 'not-allowed';
+            status.textContent = 'Testing...';
+            status.style.color = '#0078d4';
+            info.style.display = 'block';
+            
+            // Send test command
+            if (window.mouse2vr) {
+                window.mouse2vr.startTest();
+            }
+            
+            // Show countdown
+            let secondsLeft = 5;
+            const countdownInterval = setInterval(() => {
+                secondsLeft--;
+                if (secondsLeft > 0) {
+                    status.textContent = `Testing... ${secondsLeft}s`;
+                } else {
+                    clearInterval(countdownInterval);
+                    status.textContent = 'Test Complete - Check logs/debug.log';
+                    status.style.color = '#10893e';
+                    button.disabled = false;
+                    button.style.background = '#0078d4';
+                    button.style.cursor = 'pointer';
+                    
+                    // Hide info after a delay
+                    setTimeout(() => {
+                        info.style.display = 'none';
+                        status.textContent = '';
+                    }, 5000);
+                }
+            }, 1000);
         }
         
         function updateRate(value) {

@@ -54,6 +54,10 @@ public:
     double GetAverageSpeed() const;
     int GetActualUpdateRate() const;
     
+    // Testing
+    void StartMovementTest();
+    bool IsTestRunning() const { return m_isTestRunning; }
+    
     // Internal access for WM_INPUT processing
     RawInputHandler* GetInputHandler() const { return m_inputHandler.get(); }
     
@@ -78,6 +82,15 @@ private:
     std::chrono::steady_clock::time_point m_rateTrackingStart;
     std::atomic<int> m_updateCount{0};
     std::atomic<int> m_actualUpdateRate{0};
+    
+    // Testing
+    std::atomic<bool> m_isTestRunning{false};
+    std::chrono::steady_clock::time_point m_testStartTime;
+    float m_testDuration = 5.0f;
+    int m_testUpdateCount = 0;
+    float m_testTotalDistance = 0.0f;
+    float m_testPeakSpeed = 0.0f;
+    float m_testTotalSpeed = 0.0f;
     
     // Internal methods
     void ProcessingLoop();

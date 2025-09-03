@@ -227,6 +227,34 @@ int Mouse2VRCore::GetActualUpdateRate() const {
     return m_actualUpdateRate.load();
 }
 
+void Mouse2VRCore::StartMovementTest() {
+    if (m_isTestRunning) {
+        LOG_WARNING("Core", "Test already running");
+        return;
+    }
+    
+    LOG_INFO("Core", "===== STARTING 5-SECOND MOVEMENT TEST =====");
+    LOG_INFO("Core", "Move the treadmill to generate test data");
+    
+    m_isTestRunning = true;
+    m_testStartTime = std::chrono::steady_clock::now();
+    m_testUpdateCount = 0;
+    m_testTotalDistance = 0.0f;
+    m_testPeakSpeed = 0.0f;
+    m_testTotalSpeed = 0.0f;
+    
+    // Get current settings for logging
+    auto config = m_processor->GetConfig();
+    float dpi = config.countsPerMeter / 39.3701f;
+    
+    LOG_INFO("Core", "Test Configuration:");
+    LOG_INFO("Core", "  DPI: " + std::to_string(static_cast<int>(dpi)));
+    LOG_INFO("Core", "  Sensitivity: " + std::to_string(config.sensitivity));
+    LOG_INFO("Core", "  Counts per meter: " + std::to_string(config.countsPerMeter));
+    LOG_INFO("Core", "  Invert Y: " + std::string(config.invertY ? "Yes" : "No"));
+    LOG_INFO("Core", "  Lock X: " + std::string(config.lockX ? "Yes" : "No"));
+}
+
 void Mouse2VRCore::ProcessingLoop() {
     LOG_DEBUG("Core", "ProcessingLoop started with target rate: " + std::to_string(m_updateRateHz.load()) + " Hz");
     
@@ -307,8 +335,57 @@ void Mouse2VRCore::UpdateController() {
         m_currentState.stickY = stickY;
     }
     
-    // Debug logging for significant movement
-    if (delta.y != 0 || delta.x != 0) {
+    // Test mode logging
+    if (m_isTestRunning) {
+        auto testNow = std::chrono::steady_clock::now();
+        float testElapsed = std::chrono::duration<float>(testNow - m_testStartTime).count();
+        
+        if (testElapsed >= m_testDuration) {
+            // End test
+            m_isTestRunning = false;
+            
+            // Calculate averages
+            float avgSpeed = m_testUpdateCount > 0 ? m_testTotalSpeed / m_testUpdateCount : 0.0f;
+            
+            LOG_INFO("Core", "===== TEST COMPLETE =====");
+            LOG_INFO("Core", "Test Results:");
+            LOG_INFO("Core", "  Duration: " + std::to_string(m_testDuration) + " seconds");
+            LOG_INFO("Core", "  Updates: " + std::to_string(m_testUpdateCount));
+            LOG_INFO("Core", "  Average Speed: " + std::to_string(avgSpeed) + " m/s");
+            LOG_INFO("Core", "  Peak Speed: " + std::to_string(m_testPeakSpeed) + " m/s");
+            LOG_INFO("Core", "  Total Distance: " + std::to_string(m_testTotalDistance) + " meters");
+            LOG_INFO("Core", "  Avg Update Rate: " + std::to_string(static_cast<int>(m_testUpdateCount / m_testDuration)) + " Hz");
+            LOG_INFO("Core", "=========================");
+        } else {
+            // Log detailed test data
+            m_testUpdateCount++;
+            float currentSpeed = m_processor->GetSpeedMetersPerSecond();
+            m_testTotalSpeed += currentSpeed;
+            m_testTotalDistance += currentSpeed * elapsed;
+            
+            if (currentSpeed > m_testPeakSpeed) {
+                m_testPeakSpeed = currentSpeed;
+            }
+            
+            // Get config for sensitivity
+            auto config = m_processor->GetConfig();
+            
+            // Calculate game speed (stick deflection * max HL2 speed)
+            float gameSpeed = stickY * 6.1f;
+            
+            // Only log when there's movement
+            if (delta.y != 0) {
+                LOG_INFO("Core", "[TEST] t=" + std::to_string(testElapsed) + "s" +
+                                " | raw_mickeys=" + std::to_string(delta.y) +
+                                " | treadmill_speed=" + std::to_string(currentSpeed) + "m/s" +
+                                " | sensitivity=" + std::to_string(config.sensitivity) +
+                                " | game_speed=" + std::to_string(std::abs(gameSpeed)) + "m/s" +
+                                " | deflection=" + std::to_string(std::abs(stickY) * 100.0f) + "%");
+            }
+        }
+    }
+    // Regular debug logging (when not testing)
+    else if (delta.y != 0 || delta.x != 0) {
         LOG_DEBUG("Core", "UpdateController: deltaY=" + std::to_string(delta.y) + 
                           " -> stickY=" + std::to_string(stickY) +
                           " (speed=" + std::to_string(m_processor->GetSpeedMetersPerSecond()) + " m/s)" +

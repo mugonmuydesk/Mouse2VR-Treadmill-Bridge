@@ -35,6 +35,18 @@ Treadmill Belt → Mouse Sensor → Mouse2VR → Virtual Xbox Controller → VR 
 - Windows 10/11
 - [ViGEmBus Driver](https://github.com/ViGEm/ViGEmBus/releases) (required for virtual controller)
 - Visual C++ Redistributables 2019+
+- WebView2 Runtime (usually pre-installed on Windows 11)
+
+### ⚠️ Windows Security False Positive
+Windows Defender may flag Mouse2VR_WebView.exe as suspicious. This is a **false positive** because:
+- The executable is unsigned (code signing certificates cost $300+/year)
+- It contains virtual gamepad drivers that trigger antivirus heuristics
+- It's a new/rare file that Windows hasn't seen before
+
+**To fix this:**
+1. Click "More info" → "Run anyway" when Windows blocks it
+2. Or add an exclusion: Windows Security → Virus & threat protection → Exclusions → Add folder `C:\Dev\Releases\Mouse2VR\`
+3. The source code is fully open and built transparently on GitHub Actions
 
 ### Quick Start
 1. Download the latest release from [Releases](https://github.com/mugonmuydesk/Mouse2VR-Treadmill-Bridge/releases)

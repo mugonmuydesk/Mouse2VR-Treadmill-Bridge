@@ -2,7 +2,7 @@
 
 Convert your DIY treadmill's mouse sensor input into smooth VR locomotion!
 
-**✅ v2.4.0 Update: Core functionality fully restored! The app now properly captures mouse input and controls the virtual gamepad.**
+**✅ v2.5.0 Update: All GUI settings now functional! Dual-trace speed graph shows both treadmill and game speed with Fluent Design.**
 
 ## 🎯 What This Does
 
@@ -12,7 +12,7 @@ Mouse2VR bridges the gap between physical treadmill movement and virtual reality
 - ✅ Raw Input API - No screen edge limitations
 - ✅ Direct ViGEm integration - Creates virtual Xbox 360 controller
 - ✅ Zero smoothing - Your treadmill provides real physics
-- ✅ High performance - 100Hz update rate
+- ✅ High performance - Adjustable 30-100Hz update rate
 - ✅ Multiple interfaces - Console and WebView2 GUI
 - ✅ Modular architecture - Core library with pluggable UI frontends
 - ✅ Fixed mouse direction mapping - Forward movement works correctly
@@ -118,18 +118,20 @@ cmake --build . --config Release
 - [x] Fixed sensitivity
 - [x] Config file support (ConfigManager implemented)
 
-### v2.0 - Enhanced UI (In Progress - Current v2.4.0)
+### v2.0 - Enhanced UI (Current v2.5.0)
 - [x] Modular core library architecture
 - [x] WebView2 GUI implementation with optional system tray
-- [x] Modern HTML/CSS/JS interface
+- [x] Modern HTML/CSS/JS interface with Fluent Design
 - [x] Debug logging capabilities
 - [x] Fixed mouse direction mapping
 - [x] Standard Windows application behavior
-- [x] **Core functionality restored** - Mouse input now properly connected to virtual controller
-- [x] Real-time speed display from actual sensor data
-- [ ] Live input visualization
-- [ ] Settings panel (configuration methods implemented, UI pending)
+- [x] **Core functionality restored** - Mouse input properly connected to virtual controller
+- [x] Real-time speed display with dual-trace graph
+- [x] Live stick position visualization
+- [x] **All settings functional** - Sensitivity, update rate, invert Y, lock X
+- [x] **Dual-trace speed graph** - Shows both treadmill and game speed
 - [ ] Calibration wizard
+- [ ] Per-game profiles
 
 ### v3.0 - Advanced Features
 - [ ] Per-game profiles

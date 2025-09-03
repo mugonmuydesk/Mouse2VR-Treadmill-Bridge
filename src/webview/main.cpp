@@ -241,7 +241,7 @@ private:
                 //     MinimizeToTray();
                 //     return 0;
                 // }
-                break;
+                return 0;  // We handled this message
                 
             case WM_SYSCOMMAND:
                 // Let Windows handle normal minimize behavior
@@ -258,16 +258,16 @@ private:
                 
             case WM_DESTROY:
                 PostQuitMessage(0);
-                break;
+                return 0;
                 
             case WM_TRAYICON:
                 return HandleTrayMessage(wParam, lParam);
                 
             default:
-                return DefWindowProc(hwnd, message, wParam, lParam);
+                break;
         }
         
-        return 0;
+        return DefWindowProc(hwnd, message, wParam, lParam);
     }
     
     LRESULT HandleTrayMessage(WPARAM wParam, LPARAM lParam) {

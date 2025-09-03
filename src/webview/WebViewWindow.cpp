@@ -136,14 +136,9 @@ HRESULT WebViewWindow::OnCreateWebViewControllerCompleted(HRESULT result, ICoreW
     settings->put_IsWebMessageEnabled(TRUE);
     settings->put_AreDevToolsEnabled(TRUE);  // Enable DevTools for debugging
     
-    // Resize WebView to fit parent window
+    // Resize WebView to fit parent window (use full client area)
     RECT bounds;
     GetClientRect(m_parentWindow, &bounds);
-    
-    // Leave room for the title bar by adjusting top
-    int titleBarHeight = GetSystemMetrics(SM_CYCAPTION) + GetSystemMetrics(SM_CYFRAME);
-    bounds.top += titleBarHeight;
-    
     Resize(bounds);
     
     // Register event handlers

@@ -14,6 +14,8 @@ Mouse2VR bridges the gap between physical treadmill movement and virtual reality
 - ✅ Multiple interfaces - Console and WebView2 GUI
 - ✅ Modular architecture - Core library with pluggable UI frontends
 - ✅ Fixed mouse direction mapping - Forward movement works correctly
+- ✅ Standard Windows behavior - Normal minimize/maximize/close buttons
+- ✅ Optional system tray - Available but not forced
 
 ## 🔧 Physical Setup
 
@@ -116,10 +118,11 @@ cmake --build . --config Release
 
 ### v2.0 - Enhanced UI (In Progress - Current v2.3.0)
 - [x] Modular core library architecture
-- [x] WebView2 GUI implementation with system tray
+- [x] WebView2 GUI implementation with optional system tray
 - [x] Modern HTML/CSS/JS interface
 - [x] Debug logging capabilities
 - [x] Fixed mouse direction mapping
+- [x] Standard Windows application behavior
 - [ ] Live input visualization
 - [ ] Stick position preview (partially implemented)
 - [ ] Settings panel (in progress)

@@ -19,7 +19,7 @@ cd build
 
 REM Configure with CMake
 echo [1/4] Configuring CMake...
-cmake -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON .. >cmake_config.log 2>&1
+"C:\Program Files\CMake\bin\cmake.exe" -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON .. >cmake_config.log 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: CMake configuration failed
     type cmake_config.log
@@ -29,7 +29,7 @@ echo SUCCESS: CMake configured
 
 REM Build tests
 echo [2/4] Building tests...
-cmake --build . --config Debug --target Mouse2VR_Tests >build.log 2>&1
+"C:\Program Files\CMake\bin\cmake.exe" --build . --config Debug --target Mouse2VR_Tests >build.log 2>&1
 if %errorlevel% neq 0 (
     echo ERROR: Build failed
     type build.log

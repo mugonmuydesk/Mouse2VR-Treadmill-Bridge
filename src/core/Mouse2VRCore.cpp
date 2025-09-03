@@ -34,11 +34,11 @@ bool Mouse2VRCore::Initialize() {
     
     LOG_INFO("Core", "Initializing Mouse2VR Core...");
     
-    // TODO: Initialize actual components
-    // m_inputHandler = std::make_unique<RawInputHandler>();
-    // m_controller = std::make_unique<ViGEmController>();
-    // m_processor = std::make_unique<InputProcessor>();
-    // m_config = std::make_unique<ConfigManager>();
+    // Initialize actual components
+    m_inputHandler = std::make_unique<RawInputHandler>();
+    m_controller = std::make_unique<ViGEmController>();
+    m_processor = std::make_unique<InputProcessor>();
+    m_config = std::make_unique<ConfigManager>();
     
     m_isInitialized = true;
     LOG_INFO("Core", "Mouse2VR Core initialized successfully");
@@ -53,8 +53,8 @@ void Mouse2VRCore::Start() {
     LOG_INFO("Core", "Starting Mouse2VR Core...");
     m_isRunning = true;
     
-    // TODO: Start processing thread
-    // std::thread(&Mouse2VRCore::ProcessingLoop, this).detach();
+    // Start processing thread
+    std::thread(&Mouse2VRCore::ProcessingLoop, this).detach();
 }
 
 void Mouse2VRCore::Stop() {

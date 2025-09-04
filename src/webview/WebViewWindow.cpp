@@ -1076,8 +1076,8 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             }, intervalMs);
         }
         
-        // Start with default 60Hz
-        startPolling(60);
+        // Start with 5Hz polling (200ms) for better performance
+        startPolling(5);
         
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {

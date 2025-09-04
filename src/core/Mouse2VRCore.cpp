@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cctype>
+#include <algorithm>
 
 #include "core/Mouse2VRCore.h"
 #include "common/Logger.h"
@@ -13,6 +14,10 @@
 #include "core/RawInputHandler.h"
 #include "core/ViGEmController.h"
 #include "core/InputProcessor.h"
+
+// Windows multimedia for timeBeginPeriod
+#include <mmsystem.h>
+#pragma comment(lib, "winmm.lib")
 
 #include <thread>
 #include <chrono>
@@ -38,6 +43,9 @@ bool Mouse2VRCore::Initialize(HWND hwnd) {
     if (m_isInitialized) {
         return true;
     }
+    
+    // Enable high-resolution timers (1ms resolution)
+    timeBeginPeriod(1);
     
     LOG_INFO("Core", "Initializing Mouse2VR Core...");
     
@@ -121,6 +129,10 @@ void Mouse2VRCore::Stop() {
 void Mouse2VRCore::Shutdown() {
     Stop();
     m_isInitialized = false;
+    
+    // Restore default timer resolution
+    timeEndPeriod(1);
+    
     LOG_INFO("Core", "Mouse2VR Core shut down");
 }
 
@@ -261,33 +273,48 @@ void Mouse2VRCore::StartMovementTest() {
 void Mouse2VRCore::ProcessingLoop() {
     LOG_DEBUG("Core", "ProcessingLoop started with target rate: " + std::to_string(m_updateRateHz.load()) + " Hz");
     
-    // Use high precision timing with microseconds
-    using clock = std::chrono::steady_clock;
-    using microseconds = std::chrono::microseconds;
+    // Use QueryPerformanceCounter for high precision timing
+    LARGE_INTEGER frequency, lastTime, currentTime;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&lastTime);
     
-    auto nextUpdate = clock::now();
+    double targetIntervalSeconds = 1.0 / m_updateRateHz.load();
+    double accumulator = 0.0;
+    int missedTicks = 0;
+    auto lastMissedTickWarning = std::chrono::steady_clock::now();
     
     while (m_isRunning) {
-        // Calculate interval in microseconds for better precision
-        int targetHz = m_updateRateHz.load();
-        auto intervalUs = microseconds(1000000 / targetHz);
+        QueryPerformanceCounter(&currentTime);
+        double elapsed = static_cast<double>(currentTime.QuadPart - lastTime.QuadPart) / frequency.QuadPart;
+        lastTime = currentTime;
         
-        // Schedule next update time BEFORE processing
-        nextUpdate += intervalUs;
+        accumulator += elapsed;
         
-        // Do the actual work
-        UpdateController();
+        // Process updates if we've accumulated enough time
+        if (accumulator >= targetIntervalSeconds) {
+            UpdateController();
+            accumulator -= targetIntervalSeconds;
+            
+            // Track if we're running behind
+            if (accumulator > targetIntervalSeconds) {
+                missedTicks++;
+                auto now = std::chrono::steady_clock::now();
+                if (now - lastMissedTickWarning > std::chrono::seconds(1)) {
+                    LOG_WARNING("Core", "Processing loop missed " + std::to_string(missedTicks) + 
+                               " ticks in last second, actual rate: " + std::to_string(m_actualUpdateRate.load()) + " Hz");
+                    missedTicks = 0;
+                    lastMissedTickWarning = now;
+                }
+                // Clamp accumulator to prevent spiral
+                accumulator = std::min(accumulator, targetIntervalSeconds * 2.0);
+            }
+        }
         
-        // Sleep until next scheduled update
-        // Use sleep_until for more precise timing
-        std::this_thread::sleep_until(nextUpdate);
-        
-        // If we're running behind, catch up without sleeping
-        auto now = clock::now();
-        if (now > nextUpdate) {
-            // We're running behind schedule, reset to avoid spiral
-            nextUpdate = now;
-            LOG_DEBUG("Core", "Processing loop running behind, resetting schedule");
+        // Sleep for most of the remaining time
+        double sleepTime = targetIntervalSeconds - accumulator;
+        if (sleepTime > 0.001) { // Only sleep if more than 1ms remains
+            std::this_thread::sleep_for(std::chrono::microseconds(
+                static_cast<int64_t>((sleepTime - 0.001) * 1000000)));
         }
     }
     

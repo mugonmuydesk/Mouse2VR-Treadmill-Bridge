@@ -25,6 +25,15 @@ add_subdirectory(external)
 # Find packages
 find_package(Threads REQUIRED)
 
+# Add spdlog
+include(FetchContent)
+FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog.git
+    GIT_TAG v1.13.0
+)
+FetchContent_MakeAvailable(spdlog)
+
 # Core library
 add_library(Mouse2VRCore STATIC
     src/core/Mouse2VRCore.cpp
@@ -47,6 +56,7 @@ target_link_libraries(Mouse2VRCore PUBLIC
     Threads::Threads
     setupapi
     winmm
+    spdlog::spdlog
 )
 
 target_compile_definitions(Mouse2VRCore PUBLIC

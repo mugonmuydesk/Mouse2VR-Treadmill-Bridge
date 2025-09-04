@@ -2,7 +2,7 @@
 
 Transform any treadmill into a VR locomotion device using a simple USB mouse!
 
-**Latest: v2.7.1** - Fluent Design UI with real-time performance metrics and improved update rates
+**Latest: v2.8.3** - DPI calibration, performance optimizations, and true portability
 
 ## 🎯 What It Does
 
@@ -22,6 +22,13 @@ Mouse2VR captures movement from a mouse sensor attached to your treadmill belt a
 - **Dual-Trace Speed Graph** - Monitor both treadmill and game speed
 - **Toggle Switch Control** - Simple on/off for virtual controller
 - **Sensitivity Slider** - Visual feedback with 1.0 reference notch
+
+### New in v2.8+
+- **DPI Calibration** - Presets for 400, 800, 1000, 1200, 1600, 3200 DPI mice
+- **Accurate Speed Calculation** - Real physical speed in m/s based on mouse DPI
+- **5-Second Movement Test** - Diagnostics button with detailed logging
+- **True Portability** - Config and logs stored relative to exe location
+- **Performance Optimizations** - Async logging, high-res timers, stable 45 Hz
 
 ## 📦 Installation
 
@@ -97,17 +104,17 @@ The app reads mouse movement in "counts" (also called mickeys). Your mouse DPI d
 - **1600 DPI mouse** = 1600 counts per inch = ~63,000 counts per meter
 - **400 DPI mouse** = 400 counts per inch = ~15,750 counts per meter
 
-Currently, the app uses a default calibration. Future versions will add DPI-based calibration for accurate speed display in m/s.
+The app now includes DPI calibration settings. Select your mouse DPI from the settings panel (default: 1000 DPI) for accurate speed measurements in m/s. Use the 5-second test feature to verify your settings.
 
 ### Performance Metrics
 
 **Target vs Actual Update Rate**  
-Due to Windows timer limitations, actual rates may be lower than targets:
-- Target 25 Hz → Actual ~20-25 Hz
-- Target 45 Hz → Actual ~35-45 Hz  
-- Target 60 Hz → Actual ~45-60 Hz
+With v2.8.3 performance optimizations:
+- Target 25 Hz → Actual 24-25 Hz
+- Target 45 Hz → Actual 44-45 Hz (stable)
+- Target 60 Hz → Actual 58-60 Hz
 
-This is normal and doesn't significantly affect gameplay.
+The app now uses high-resolution timers (1ms precision) and QueryPerformanceCounter for accurate timing. UI updates at 5 Hz to reduce overhead while maintaining responsiveness.
 
 ## 🛠️ Troubleshooting
 
@@ -141,6 +148,10 @@ This is normal and doesn't significantly affect gameplay.
 - Git
 
 ### Build Steps
+
+**Note:** This project uses GitHub Actions for all builds. Push to GitHub and download artifacts from the Actions tab.
+
+For local development only:
 ```bash
 git clone https://github.com/mugonmuydesk/Mouse2VR-Treadmill-Bridge.git
 cd Mouse2VR-Treadmill-Bridge

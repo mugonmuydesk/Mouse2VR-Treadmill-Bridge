@@ -414,10 +414,10 @@ void Mouse2VRCore::UpdateController() {
     if (enableDetailedLogging && ++logCounter % 50 == 0) { // Log every 50th update
         auto config = m_processor->GetConfig();
         float dpi = config.countsPerMeter / 39.3701f;
-        float physicalSpeed = (delta.dy / elapsed) / dpi * 0.0254f; // m/s
+        float physicalSpeed = (delta.y / elapsed) / dpi * 0.0254f; // m/s
         float gameSpeed = stickY * 6.1f * config.sensitivity / 100.0f; // m/s in game
         
-        LOG_DEBUG("Core", "[VR Detail] DeltaY=" + std::to_string(delta.dy) + 
+        LOG_DEBUG("Core", "[VR Detail] DeltaY=" + std::to_string(delta.y) + 
                  " counts, Physical=" + std::to_string(physicalSpeed) + 
                  " m/s, Game=" + std::to_string(gameSpeed) + 
                  " m/s, Stick=" + std::to_string(stickY * 100) + "%");

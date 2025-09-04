@@ -94,6 +94,11 @@ bool Mouse2VRCore::Initialize(HWND hwnd) {
         m_updateRateHz = 1000 / config.updateIntervalMs;
     }
     
+    // Register settings provider with logger
+    Logger::Instance().SetSettingsProvider([this]() {
+        return GetCurrentSettingsSnapshot();
+    });
+    
     m_isInitialized = true;
     LOG_INFO("Core", "Mouse2VR Core initialized successfully");
     return true;
@@ -463,6 +468,60 @@ void Mouse2VRCore::UpdateSettings(const AppConfig& newConfig) {
 void Mouse2VRCore::ForceUpdate() {
     // Force a single update cycle for testing
     UpdateController();
+}
+
+std::string Mouse2VRCore::GetCurrentSettingsSnapshot() const {
+    std::string snapshot;
+    
+    try {
+        // Get processor config
+        if (m_processor) {
+            auto procConfig = m_processor->GetConfig();
+            int dpi = static_cast<int>(procConfig.countsPerMeter / 39.3701f);
+            
+            // Format: DPI:1000|Sens:1.0|Hz:45|InvY:0|LockX:1|Running:1|ActHz:44|Speed:0.05
+            snapshot = "DPI:" + std::to_string(dpi);
+            
+            // Add sensitivity (format to 1 decimal)
+            char sensStr[16];
+            snprintf(sensStr, sizeof(sensStr), "%.1f", procConfig.sensitivity);
+            snapshot += "|Sens:" + std::string(sensStr);
+            
+            // Add target Hz
+            snapshot += "|Hz:" + std::to_string(m_updateRateHz.load());
+            
+            // Add axis settings
+            snapshot += "|InvY:" + std::to_string(procConfig.invertY ? 1 : 0);
+            snapshot += "|LockX:" + std::to_string(procConfig.lockX ? 1 : 0);
+            
+            // Add running status
+            snapshot += "|Run:" + std::to_string(m_isRunning ? 1 : 0);
+            
+            // Add actual update rate
+            snapshot += "|ActHz:" + std::to_string(m_actualUpdateRate.load());
+            
+            // Add current speed (format to 2 decimals)
+            float speed = m_processor->GetSpeedMetersPerSecond();
+            char speedStr[16];
+            snprintf(speedStr, sizeof(speedStr), "%.2f", speed);
+            snapshot += "|Spd:" + std::string(speedStr);
+            
+            // Add stick deflection percentage (format to 1 decimal)
+            float deflection = m_processor->GetStickDeflectionPercent();
+            char deflStr[16];
+            snprintf(deflStr, sizeof(deflStr), "%.1f", deflection);
+            snapshot += "|Stk:" + std::string(deflStr) + "%";
+            
+            // Add test status if running
+            if (m_isTestRunning) {
+                snapshot += "|TEST:1";
+            }
+        }
+    } catch (...) {
+        // Return partial snapshot on error
+    }
+    
+    return snapshot;
 }
 
 } // namespace Mouse2VR

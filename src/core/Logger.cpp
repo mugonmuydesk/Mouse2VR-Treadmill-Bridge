@@ -69,6 +69,10 @@ void Logger::Initialize(const std::string& logPath, bool useExeRelative) {
     }
 }
 
+void Logger::SetSettingsProvider(std::function<std::string()> provider) {
+    m_settingsProvider = provider;
+}
+
 void Logger::Log(Level level, const std::string& component, const std::string& message) {
     if (!m_logger) {
         std::cerr << "[" << component << "] " << message << std::endl;
@@ -84,6 +88,18 @@ void Logger::Log(Level level, const std::string& component, const std::string& m
     
     // Format message with component
     std::string formatted = component + "] " + message;
+    
+    // Append current settings if provider is set
+    if (m_settingsProvider) {
+        try {
+            std::string settings = m_settingsProvider();
+            if (!settings.empty()) {
+                formatted += " [" + settings + "]";
+            }
+        } catch (...) {
+            // Ignore errors in settings provider to avoid recursive logging issues
+        }
+    }
     
     switch (level) {
         case DEBUG:

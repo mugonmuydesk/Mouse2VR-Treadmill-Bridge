@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <chrono>
+#include <functional>
 
 namespace Mouse2VR {
 
@@ -32,6 +33,9 @@ public:
                      const std::string& key1, const std::string& value1,
                      const std::string& key2, const std::string& value2);
     
+    // Set a provider function that returns current settings as a string
+    void SetSettingsProvider(std::function<std::string()> provider);
+    
     void Flush();
     void Close();
     
@@ -45,6 +49,7 @@ private:
     std::shared_ptr<spdlog::logger> m_logger;
     std::chrono::steady_clock::time_point m_lastWarningTime;
     static constexpr auto WARNING_RATE_LIMIT = std::chrono::seconds(1);
+    std::function<std::string()> m_settingsProvider;
     
     spdlog::level::level_enum ConvertLevel(Level level);
     bool ShouldRateLimit(Level level, const std::string& message);

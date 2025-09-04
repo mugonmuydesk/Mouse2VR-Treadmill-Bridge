@@ -76,6 +76,9 @@ public:
     void UpdateSettings(const struct AppConfig& config);
     void ForceUpdate();
     
+    // Get snapshot of all current settings for logging
+    std::string GetCurrentSettingsSnapshot() const;
+    
 private:
     std::unique_ptr<RawInputHandler> m_inputHandler;
     std::unique_ptr<ViGEmController> m_controller;

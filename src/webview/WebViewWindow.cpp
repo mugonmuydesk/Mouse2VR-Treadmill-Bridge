@@ -577,12 +577,16 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                             <span class="status-value" id="statusValue">Stopped</span>
                         </div>
                         <div class="status-metric">
-                            <span class="status-label">Speed</span>
-                            <span class="status-value" id="speedValue">0.00 m/s</span>
+                            <span class="status-label">Treadmill Speed</span>
+                            <span class="status-value" id="treadmillSpeedValue">0.00 m/s</span>
                         </div>
                         <div class="status-metric">
-                            <span class="status-label">Stick</span>
+                            <span class="status-label">Stick Deflection</span>
                             <span class="status-value" id="stickValue">0%</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">Predicted Game Speed</span>
+                            <span class="status-value" id="gameSpeedValue">0.00 m/s</span>
                         </div>
                         <div class="status-metric">
                             <span class="status-label">Actual Update Rate</span>
@@ -665,7 +669,6 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
                 <div class="checkbox-group">
                     <label><input type="checkbox" id="invertY" onchange="updateAxisOptions()"> Invert Y Axis</label>
                     <label><input type="checkbox" id="lockX" checked onchange="updateAxisOptions()"> Lock X Axis</label>
-                    <label><input type="checkbox" id="adaptive" onchange="updateAxisOptions()"> Adaptive Mode</label>
                 </div>
             </div>
         </div>
@@ -845,21 +848,21 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
         function updateAxisOptions() {
             const invertY = document.getElementById('invertY').checked;
             const lockX = document.getElementById('lockX').checked;
-            const adaptive = document.getElementById('adaptive').checked;
             
             // Send settings to backend
             if (window.mouse2vr) {
                 window.mouse2vr.setInvertY(invertY);
                 window.mouse2vr.setLockX(lockX);
-                // Adaptive mode not yet implemented in backend
-                console.log('Adaptive mode:', adaptive);
             }
         }
         
         // Update speed and stick displays
         function updateSpeed(treadmillSpeed, gameSpeed, stickY, actualHz) {
-            // Update speed value (show absolute for display)
-            document.getElementById('speedValue').textContent = Math.abs(treadmillSpeed).toFixed(2) + ' m/s';
+            // Update treadmill speed value (show absolute for display)
+            document.getElementById('treadmillSpeedValue').textContent = Math.abs(treadmillSpeed).toFixed(2) + ' m/s';
+            
+            // Update predicted game speed
+            document.getElementById('gameSpeedValue').textContent = Math.abs(gameSpeed).toFixed(2) + ' m/s';
             
             // Use actual stick Y value if provided
             let stickPercent = 0;

@@ -2,7 +2,7 @@
 
 Transform any treadmill into a VR locomotion device using a simple USB mouse!
 
-**Latest: v2.9.3** - Fixed dynamic rate changes, UI improvements, all performance issues resolved
+**Latest: v2.11.0** - Config-UI synchronization, independent rate controls, HTML/JS extraction
 
 ## 🎯 What It Does
 
@@ -23,10 +23,11 @@ Mouse2VR captures movement from a mouse sensor attached to your treadmill belt a
 - **Toggle Switch Control** - Simple on/off for virtual controller
 - **Sensitivity Slider** - Visual feedback with 1.0 reference notch
 
-### New in v2.9.3
-- **Fixed Dynamic Rate Changes** - Mouse processing rate now correctly updates when changed (25/45/60 Hz)
-- **UI Improvements** - Clearer metrics: "Treadmill Speed", "Stick Deflection", "Predicted Game Speed"
-- **Removed Unused Features** - Removed non-functional "Adaptive Mode" checkbox
+### New in v2.11.0
+- **Config-UI Synchronization** - Config file is now the single source of truth
+- **Independent Rate Controls** - Separate backend (25-60 Hz) and UI refresh (1/5/20 Hz) rates
+- **HTML/JS Extraction** - Separated HTML/CSS/JS to external files for easier development
+- **Direct Rate Control** - Removed confusing hidden rate mappings
 
 ### New in v2.9.1-2.9.2
 - **Fixed WebView Polling** - UI now maintains constant 5 Hz refresh regardless of backend rate
@@ -93,11 +94,11 @@ Multiplies mouse input. Default 1.0 works for most setups.
 - Lower = need more belt movement for same game speed
 - Higher = less belt movement needed
 
-**Target Update Rate**  
-How often mouse input is processed and sent to the virtual controller (Hz). This directly affects gameplay responsiveness. Higher = more responsive.
-- 25 Hz - Low latency, minimal CPU usage
-- 45 Hz - Balanced performance (recommended)
-- 60 Hz - Smoothest movement
+**Backend Target Rate**  
+How often mouse input is processed (25/45/50/60 Hz). Higher = more responsive.
+
+**UI Refresh Rate**  
+How often the interface updates (1/5/20 Hz). Lower = less CPU usage.
 
 ⚠️ **Important**: This controls the mouse→controller processing rate, NOT the GUI display rate. See "Understanding Update Rates" below for details.
 

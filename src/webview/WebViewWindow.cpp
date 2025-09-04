@@ -290,6 +290,26 @@ void WebViewWindow::RegisterEventHandlers() {
                     LOG_INFO("WebView", "Stopped Mouse2VR core");
                     // Update UI status
                     ExecuteScript(L"updateStatus(false)");
+                } else if (msg == L"getConfig") {
+                    // Get current configuration from core
+                    auto procConfig = m_core->GetProcessorConfig();
+                    int targetHz = m_core->GetTargetUpdateRate();
+                    bool isRunning = m_core->IsRunning();
+                    
+                    // Build config JSON string
+                    std::wstring configJson = L"{"
+                        L"\"dpi\":" + std::to_wstring(procConfig.dpi) + L","
+                        L"\"sensitivity\":" + std::to_wstring(procConfig.sensitivity) + L","
+                        L"\"updateRateHz\":" + std::to_wstring(targetHz) + L","
+                        L"\"uiRateHz\":5," // Default UI rate, TODO: store this properly
+                        L"\"invertY\":" + (procConfig.invertY ? L"true" : L"false") + L","
+                        L"\"lockX\":" + (procConfig.lockX ? L"true" : L"false") + L","
+                        L"\"runEnabled\":" + (isRunning ? L"true" : L"false") +
+                        L"}";
+                    
+                    // Send config to JavaScript
+                    ExecuteScript(L"if(window.applyConfigToUI) applyConfigToUI(" + configJson + L")");
+                    LOG_INFO("WebView", "Sent config to UI");
                 }
                 
                 return S_OK;
@@ -332,6 +352,9 @@ void WebViewWindow::InjectInitialScript() {
             },
             getSpeed: function() {
                 window.chrome.webview.postMessage('getSpeed');
+            },
+            getConfig: function() {
+                window.chrome.webview.postMessage('getConfig');
             }
         };
         

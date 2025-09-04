@@ -40,3 +40,4 @@ desktop.ini
 # Debugging/diagnostic files
 preprocessed_*.txt
 temp.obj/build_test/_deps/
+build_test/

@@ -6,20 +6,76 @@ let isRunning = false;
         let lastUpdateTime = Date.now();
         let currentDPI = 1000;  // Default DPI
         let sensitivity = 1.0;  // Current sensitivity multiplier
+        let currentUIRefreshRate = 5;  // Current UI refresh rate
+        
+        // Apply config from backend to UI
+        function applyConfigToUI(cfg) {
+            // DPI - check if it's a preset or custom value
+            const dpiRadio = document.querySelector(`input[name="dpi"][value="${cfg.dpi}"]`);
+            if (dpiRadio) {
+                dpiRadio.checked = true;
+            } else {
+                // Custom DPI value
+                document.querySelector('input[name="dpi"][value="custom"]').checked = true;
+                const customInput = document.getElementById('customDPI');
+                customInput.disabled = false;
+                customInput.value = cfg.dpi;
+            }
+            currentDPI = cfg.dpi;
+            
+            // Sensitivity
+            const sensSlider = document.getElementById('sensitivity');
+            if (sensSlider) {
+                sensSlider.value = cfg.sensitivity;
+                updateSensitivityValue(cfg.sensitivity);
+                sensitivity = cfg.sensitivity;
+            }
+            
+            // Backend rate
+            const rateRadio = document.querySelector(`input[name="rate"][value="${cfg.updateRateHz}"]`);
+            if (rateRadio) {
+                rateRadio.checked = true;
+                document.getElementById('targetRateValue').textContent = cfg.updateRateHz + ' Hz';
+            }
+            
+            // UI refresh rate
+            if (cfg.uiRateHz) {
+                const uiRateRadio = document.querySelector(`input[name="uirate"][value="${cfg.uiRateHz}"]`);
+                if (uiRateRadio) {
+                    uiRateRadio.checked = true;
+                    document.getElementById('uiRefreshRateValue').textContent = cfg.uiRateHz + ' Hz';
+                    currentUIRefreshRate = cfg.uiRateHz;
+                }
+            }
+            
+            // Axis options
+            const invertY = document.getElementById('invertY');
+            if (invertY) invertY.checked = cfg.invertY;
+            
+            const lockX = document.getElementById('lockX');
+            if (lockX) lockX.checked = cfg.lockX;
+            
+            // Controller toggle
+            const enableController = document.getElementById('enableController');
+            if (enableController && cfg.runEnabled !== undefined) {
+                enableController.checked = cfg.runEnabled;
+                isRunning = cfg.runEnabled;
+                document.getElementById('statusValue').textContent = cfg.runEnabled ? 'Running' : 'Stopped';
+                document.getElementById('statusValue').style.color = cfg.runEnabled ? '#0f7938' : '#c42b1c';
+            }
+        }
+        
+        // Make it available globally for WebView to call
+        window.applyConfigToUI = applyConfigToUI;
         
         // Initialize canvases when page loads
         window.addEventListener('DOMContentLoaded', () => {
             initializeStickCanvas();
             initializeSpeedCanvas();
             
-            // Initialize DPI setting (default 1000)
-            if (window.mouse2vr) {
-                window.mouse2vr.setDPI(currentDPI);
-            }
-            
-            // Start controller automatically since toggle is on by default
-            if (window.mouse2vr) {
-                toggleRunning();
+            // Request config from backend to sync UI
+            if (window.mouse2vr && window.mouse2vr.getConfig) {
+                window.mouse2vr.getConfig();
             }
         });
         
@@ -353,8 +409,7 @@ function updateDPI(value) {
             }, intervalMs);
         }
         
-        // Start with 5Hz polling by default
-        let currentUIRefreshRate = 5;
+        // Start with default polling rate (will be updated by config)
         startPolling(currentUIRefreshRate);
         
         // Initialize

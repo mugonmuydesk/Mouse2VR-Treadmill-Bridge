@@ -55,6 +55,7 @@ public:
     double GetCurrentSpeed() const;
     double GetAverageSpeed() const;
     int GetActualUpdateRate() const;
+    int GetTargetUpdateRate() const { return m_updateRateHz.load(); }
     int GetSpeedQueryCount() const { return m_speedQueryCount.load(); }
     void ResetSpeedQueryCount() { m_speedQueryCount = 0; }
     

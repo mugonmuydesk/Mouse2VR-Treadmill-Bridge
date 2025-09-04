@@ -453,8 +453,10 @@ void Mouse2VRCore::UpdateSettings(const AppConfig& newConfig) {
             m_processor->SetConfig(procConfig);
         }
         
-        // Apply update rate
-        m_updateRateHz = newConfig.targetUpdateRate;
+        // Apply update rate (convert ms to Hz)
+        if (newConfig.updateIntervalMs > 0) {
+            m_updateRateHz = 1000 / newConfig.updateIntervalMs;
+        }
     }
 }
 

@@ -89,17 +89,19 @@ protected:
     }
     
     // Helper: Calculate expected stick deflection
-    float CalculateExpectedDeflection(int mickeys, int dpi, float sensitivity) {
+    float CalculateExpectedDeflection(int mickeys, int dpi, float sensitivity, float timeSeconds = 1.0f) {
         const float HL2_MAX_SPEED = 6.1f;
-        float physicalSpeed = (mickeys / static_cast<float>(dpi)) * 0.0254f; // m/s
+        // Convert mickeys over time period to speed
+        float mickeysPerSecond = mickeys / timeSeconds;
+        float physicalSpeed = (mickeysPerSecond / static_cast<float>(dpi)) * 0.0254f; // m/s
         float baseDeflection = physicalSpeed / HL2_MAX_SPEED;
         return baseDeflection * sensitivity;
     }
     
     // Helper: Calculate expected game speed
-    float CalculateExpectedGameSpeed(int mickeys, int dpi, float sensitivity) {
+    float CalculateExpectedGameSpeed(int mickeys, int dpi, float sensitivity, float timeSeconds = 1.0f) {
         const float HL2_MAX_SPEED = 6.1f;
-        float deflection = CalculateExpectedDeflection(mickeys, dpi, sensitivity);
+        float deflection = CalculateExpectedDeflection(mickeys, dpi, sensitivity, timeSeconds);
         return deflection * HL2_MAX_SPEED;
     }
     
@@ -150,9 +152,9 @@ TEST_F(SettingsValidationTest, DPISettingsAffectBehavior) {
         // Inject known input
         InjectMouseMovement(inputMickeys, 1000);
         
-        // Validate behavior
-        float expectedDeflection = CalculateExpectedDeflection(inputMickeys, dpi, sensitivity);
-        float expectedSpeed = CalculateExpectedGameSpeed(inputMickeys, dpi, sensitivity);
+        // Validate behavior (1000 mickeys over 1000ms = 1 second)
+        float expectedDeflection = CalculateExpectedDeflection(inputMickeys, dpi, sensitivity, 1.0f);
+        float expectedSpeed = CalculateExpectedGameSpeed(inputMickeys, dpi, sensitivity, 1.0f);
         
         EXPECT_NEAR(metrics.lastStickY, expectedDeflection, 0.001f) 
             << "Stick deflection incorrect for DPI " << dpi;
@@ -189,8 +191,8 @@ TEST_F(SettingsValidationTest, SensitivityScalesOutput) {
         rawInput->GetAndResetDeltas();
         InjectMouseMovement(inputMickeys, 1000);
         
-        // Validate scaled output
-        float expectedDeflection = CalculateExpectedDeflection(inputMickeys, dpi, sensitivity);
+        // Validate scaled output (1000 mickeys over 1000ms = 1 second)
+        float expectedDeflection = CalculateExpectedDeflection(inputMickeys, dpi, sensitivity, 1.0f);
         EXPECT_NEAR(metrics.lastStickY, expectedDeflection, 0.001f)
             << "Stick deflection not scaled correctly for sensitivity " << sensitivity;
     }
@@ -372,8 +374,8 @@ TEST_F(SettingsValidationTest, RuntimeSettingChangesWork) {
     float deflection2 = metrics.lastStickY;
     
     // With double sensitivity but double DPI, effective deflection should be same
-    float expected1 = CalculateExpectedDeflection(inputMickeys, 800, 1.0f);
-    float expected2 = CalculateExpectedDeflection(inputMickeys, 1600, 2.0f);
+    float expected1 = CalculateExpectedDeflection(inputMickeys, 800, 1.0f, 0.5f);  // 500ms = 0.5s
+    float expected2 = CalculateExpectedDeflection(inputMickeys, 1600, 2.0f, 0.5f); // 500ms = 0.5s
     
     EXPECT_NEAR(deflection1, expected1, 0.01f) << "First configuration behavior incorrect";
     EXPECT_NEAR(deflection2, expected2, 0.01f) << "Second configuration behavior incorrect";

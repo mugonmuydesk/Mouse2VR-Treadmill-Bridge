@@ -288,6 +288,10 @@ void Mouse2VRCore::ProcessingLoop() {
     int missedTicks = 0;
     auto lastMissedTickWarning = std::chrono::steady_clock::now();
     
+    // Diagnostic variables
+    int diagnosticUpdateCount = 0;
+    auto diagnosticStartTime = std::chrono::steady_clock::now();
+    
     while (m_isRunning) {
         QueryPerformanceCounter(&currentTime);
         double elapsed = static_cast<double>(currentTime.QuadPart - lastTime.QuadPart) / frequency.QuadPart;
@@ -298,7 +302,21 @@ void Mouse2VRCore::ProcessingLoop() {
         // Process updates if we've accumulated enough time
         if (accumulator >= targetIntervalSeconds) {
             UpdateController();
+            diagnosticUpdateCount++;
             accumulator -= targetIntervalSeconds;
+            
+            // Log diagnostic every second
+            auto now = std::chrono::steady_clock::now();
+            auto diagnosticElapsed = std::chrono::duration<float>(now - diagnosticStartTime).count();
+            if (diagnosticElapsed >= 1.0f) {
+                float measuredHz = diagnosticUpdateCount / diagnosticElapsed;
+                LOG_DEBUG("Core", "TIMING DIAGNOSTIC: Target=" + std::to_string(m_updateRateHz.load()) + 
+                         "Hz, Measured=" + std::to_string(measuredHz) + 
+                         "Hz, Updates=" + std::to_string(diagnosticUpdateCount) +
+                         ", Accumulator=" + std::to_string(accumulator));
+                diagnosticUpdateCount = 0;
+                diagnosticStartTime = now;
+            }
             
             // Track if we're running behind
             if (accumulator > targetIntervalSeconds) {

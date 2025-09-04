@@ -35,9 +35,15 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, floa
         x = countsPerSecX / dpi * 0.0254f / 6.1f;
         y = countsPerSecY / dpi * 0.0254f / 6.1f;
         
-        // Apply sensitivity as a multiplier
-        x *= m_config.sensitivity;
-        y *= m_config.sensitivity;
+        // Apply sensitivity (game-to-real-world speed multiplier)
+        float sensitivityMultiplier = m_config.sensitivity;
+        x *= sensitivityMultiplier;
+        y *= sensitivityMultiplier;
+        
+        // Debug: log if sensitivity is not being applied
+        if (delta.y != 0 && sensitivityMultiplier != 1.0f) {
+            LOG_DEBUG("Processor", "Sensitivity multiplier: " + std::to_string(sensitivityMultiplier));
+        }
     }
     
     // Debug logging for input processing
@@ -47,15 +53,14 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, floa
                   " (DPI=" + std::to_string(dpi) + ")");
     }
     
-    // Note: Mouse forward (away from user) = negative delta.y
-    //       Mouse backward (toward user) = positive delta.y
-    // We want: forward = positive stick, backward = negative stick
-    // So we need to invert the Y axis by default
-    y = -y;  // Invert so forward mouse = positive stick
+    // For treadmill usage:
+    // - Belt moving backward (you walking forward) = mouse sees positive Y movement
+    // - We want walking forward = positive stick deflection
+    // - So positive mouse Y should = positive stick Y (no inversion needed by default)
     
-    // Apply user inversion preferences (on top of default inversion)
+    // Apply user inversion preferences
     if (m_config.invertX) x = -x;
-    if (m_config.invertY) y = -y;
+    if (m_config.invertY) y = -y;  // Only invert if user explicitly requests it
     
     // Apply axis locks
     if (m_config.lockX) x = 0.0f;
@@ -73,8 +78,9 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, floa
     x = ApplyDeadzone(x);
     y = ApplyDeadzone(y);
     
-    // Force X to 0 for treadmill (Y-axis only movement)
-    x = 0.0f;
+    // Force X to 0 for treadmill (Y-axis only movement) ONLY if not testing X-axis
+    // The lockX setting above should control this, not a hardcoded override
+    // Removing this line to respect the lockX setting
     
     // Store for metrics
     m_lastStickX = x;

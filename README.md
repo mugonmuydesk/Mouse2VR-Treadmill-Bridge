@@ -2,7 +2,7 @@
 
 Transform any treadmill into a VR locomotion device using a simple USB mouse!
 
-**Latest: v2.8.3** - DPI calibration, performance optimizations, and true portability
+**Latest: v2.9.1** - Fixed WebView refresh rate, improved test coverage
 
 ## 🎯 What It Does
 
@@ -22,6 +22,11 @@ Mouse2VR captures movement from a mouse sensor attached to your treadmill belt a
 - **Dual-Trace Speed Graph** - Monitor both treadmill and game speed
 - **Toggle Switch Control** - Simple on/off for virtual controller
 - **Sensitivity Slider** - Visual feedback with 1.0 reference notch
+
+### New in v2.9.1
+- **Fixed WebView Polling** - UI now maintains constant 5 Hz refresh regardless of backend rate
+- **Improved Test Coverage** - 36/39 tests passing, up from 35/38
+- **Backend/UI Separation** - Backend processes at 25/45/60 Hz, UI refreshes at 5 Hz
 
 ### New in v2.8+
 - **DPI Calibration** - Presets for 400, 800, 1000, 1200, 1600, 3200 DPI mice

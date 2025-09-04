@@ -38,16 +38,16 @@ scripts\update_html.bat
 python scripts/inline_html.py
 ```
 
-This generates `WebViewWindow_HTML.h` with your changes.
+This generates/updates `WebViewWindow_HTML.h` with your changes.
 
-### 4. Enable in C++
-In `src/webview/WebViewWindow.cpp`, uncomment the line:
-```cpp
-#define USE_EXTERNAL_HTML
-```
+### 4. How the HTML System Works
+**IMPORTANT**: The application **always** uses the external HTML from `WebViewWindow_HTML.h`. 
+- There is **no embedded HTML** in WebViewWindow.cpp anymore
+- The `#define USE_EXTERNAL_HTML` is always enabled
+- All UI changes must be made in the `src/webview/ui/` files
 
 ### 5. Rebuild the project
-Push to GitHub and let Actions build, or build locally.
+After updating the header file, push to GitHub and let Actions build, or build locally.
 
 ## Testing Changes Locally
 
@@ -81,14 +81,9 @@ if (!window.chrome?.webview) {
 2. **Encoding**: All files use UTF-8 encoding. Ensure your editor preserves this.
 
 3. **Version Control**: 
-   - The `.cpp` file still contains the original embedded HTML for backward compatibility
-   - The generated `WebViewWindow_HTML.h` should be committed when ready for production
-   - The UI files in this directory are the source of truth when `USE_EXTERNAL_HTML` is defined
-
-4. **Switching Back**: To use the original embedded HTML, simply comment out:
-   ```cpp
-   // #define USE_EXTERNAL_HTML
-   ```
+   - The UI source files in `src/webview/ui/` are the source of truth
+   - The generated `WebViewWindow_HTML.h` should be committed after changes
+   - There is no embedded HTML in the .cpp file anymore
 
 ## File Relationships
 
@@ -104,6 +99,6 @@ ui/app.js                  -->  JavaScript code
 scripts/inline_html.py      -->  Combines files
                             -->  Generates WebViewWindow_HTML.h
 
-WebViewWindow_HTML.h        -->  Included by WebViewWindow.cpp
-                            -->  Used when USE_EXTERNAL_HTML is defined
+WebViewWindow_HTML.h        -->  Always used by WebViewWindow.cpp
+                            -->  Generated from the ui/ source files
 ```

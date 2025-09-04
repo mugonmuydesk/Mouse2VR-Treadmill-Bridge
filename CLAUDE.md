@@ -11,9 +11,10 @@
 
 ### Key Architecture Changes
 
-#### HTML/JS Development Workflow
-- **External files**: HTML/CSS/JS now in `src/webview/ui/`
-- **Build-time inlining**: Scripts in `scripts/` handle extraction and inlining
+#### HTML/JS Development Workflow  
+- **Single source of truth**: All UI code in `src/webview/ui/`
+- **No embedded HTML**: WebViewWindow.cpp always uses WebViewWindow_HTML.h
+- **Build-time generation**: Run `scripts/inline_html.py` to update header from source files
 - **MSVC string limit handling**: Automatic chunking for large HTML strings
 
 #### Config Synchronization Flow
@@ -57,11 +58,11 @@
 ### File Structure
 ```
 src/webview/
-├── WebViewWindow.cpp       # Main WebView logic + message handlers
-├── WebViewWindow_HTML.h     # Generated from ui/ files
+├── WebViewWindow.cpp       # Main WebView logic (no embedded HTML)
+├── WebViewWindow_HTML.h    # Generated header - always used
 └── ui/
-    ├── index.html          # Production HTML
-    ├── index_dev.html      # Development HTML with inline CSS/JS
-    ├── styles.css          # Extracted styles
-    └── app.js              # Extracted JavaScript
+    ├── index.html          # Production HTML source
+    ├── index_dev.html      # Development HTML for browser testing
+    ├── styles.css          # CSS styles source
+    └── app.js              # JavaScript source
 ```

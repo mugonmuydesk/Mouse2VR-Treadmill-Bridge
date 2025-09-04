@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouse2VR Treadmill Bridge</title>
+    <link rel="stylesheet" href="styles.css">
+</head><body>
+    <div class="page-container">
+        <h1>Mouse2VR Treadmill Bridge</h1>
+        
+        <div class="side-by-side">
+            <div>
+                <div class="section-label">Performance Metrics</div>
+                <div class="status-card">
+                    <div class="status-grid">
+                        <div class="status-metric">
+                            <span class="status-label">Status</span>
+                            <span class="status-value" id="statusValue">Stopped</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">Treadmill Speed</span>
+                            <span class="status-value" id="treadmillSpeedValue">0.00 m/s</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">Stick Deflection</span>
+                            <span class="status-value" id="stickValue">0%</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">Predicted Game Speed</span>
+                            <span class="status-value" id="gameSpeedValue">0.00 m/s</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">Target Rate</span>
+                            <span class="status-value" id="targetRateValue">50 Hz</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">Achieved Rate</span>
+                            <span class="status-value" id="achievedRateValue">0 Hz</span>
+                        </div>
+                        <div class="status-metric">
+                            <span class="status-label">UI Refresh Rate</span>
+                            <span class="status-value" id="uiRefreshRateValue">5 Hz</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="section-label">Controller Stick Position</div>
+                <div class="chart-card">
+                    <div class="chart-description">Visualises treadmill movement as left stick deflection.</div>
+                    <div class="chart-placeholder">
+                        <canvas id="stickCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section-label">Walking Speed Over Time</div>
+        <div class="chart-card">
+            <div class="chart-placeholder">
+                <canvas id="speedCanvas"></canvas>
+            </div>
+        </div>
+        
+        <div class="section-label">Settings</div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Mouse DPI</span>
+                <div class="radio-group">
+                    <label><input type="radio" name="dpi" value="400" onchange="updateDPI(400)"> 400</label>
+                    <label><input type="radio" name="dpi" value="800" onchange="updateDPI(800)"> 800</label>
+                    <label><input type="radio" name="dpi" value="1000" checked onchange="updateDPI(1000)"> 1000</label>
+                    <label><input type="radio" name="dpi" value="1200" onchange="updateDPI(1200)"> 1200</label>
+                    <label><input type="radio" name="dpi" value="1600" onchange="updateDPI(1600)"> 1600</label>
+                    <label><input type="radio" name="dpi" value="3200" onchange="updateDPI(3200)"> 3200</label>
+                    <label>
+                        <input type="radio" name="dpi" value="custom" onchange="enableCustomDPI()"> Custom:
+                        <input type="number" id="customDPI" min="100" max="25600" value="800" 
+                               style="width: 70px; margin-left: 4px;" 
+                               disabled onchange="updateCustomDPI(this.value)" />
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Sensitivity</span>
+                <div style="display: flex; align-items: center;">
+                    <input type="range" id="sensitivity" min="0.1" max="3.0" step="0.1" value="1.0" 
+                           oninput="updateSensitivityValue(this.value)" 
+                           onchange="updateSensitivity(this.value)" 
+                           list="sensitivity-ticks" />
+                    <datalist id="sensitivity-ticks">
+                        <option value="1.0"></option>
+                    </datalist>
+                    <span class="slider-value" id="sensitivityValue">1.0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Backend Target Rate</span>
+                <div class="radio-group">
+                    <label><input type="radio" name="rate" value="25" onchange="updateRate(25)"> 25 Hz</label>
+                    <label><input type="radio" name="rate" value="45" onchange="updateRate(45)"> 45 Hz</label>
+                    <label><input type="radio" name="rate" value="50" checked onchange="updateRate(50)"> 50 Hz</label>
+                    <label><input type="radio" name="rate" value="60" onchange="updateRate(60)"> 60 Hz</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">UI Refresh Rate</span>
+                <div class="radio-group">
+                    <label><input type="radio" name="uirate" value="1" onchange="updateUIRefreshRate(1)"> 1 Hz</label>
+                    <label><input type="radio" name="uirate" value="5" checked onchange="updateUIRefreshRate(5)"> 5 Hz</label>
+                    <label><input type="radio" name="uirate" value="20" onchange="updateUIRefreshRate(20)"> 20 Hz</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Axis Options</span>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="invertY" onchange="updateAxisOptions()"> Invert Y Axis</label>
+                    <label><input type="checkbox" id="lockX" checked onchange="updateAxisOptions()"> Lock X Axis</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Enable Virtual Controller</span>
+                <label class="switch">
+                    <input type="checkbox" id="enableController" checked onchange="toggleRunning()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    
+        <div class="section-label">Diagnostics</div>
+        
+        <div class="setting-card">
+            <div class="setting-row">
+                <span class="setting-label">Movement Test</span>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <button id="testButton" onclick="startMovementTest()" 
+                            style="padding: 8px 16px; background: #0078d4; color: white; border: none; 
+                                   border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                        Run 5-Second Test
+                    </button>
+                    <span id="testStatus" style="font-size: 14px; color: #616161;"></span>
+                </div>
+            </div>
+            <div id="testInfo" style="margin-top: 8px; font-size: 12px; color: #616161; display: none;">
+                Move the treadmill during the test. Results will be logged to logs/debug.log
+            </div>
+        </div>
+    </div>
+    
+    
+    
+    
+    <script src="app.js"></script>
+</body>
+</html>

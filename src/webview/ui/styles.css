@@ -1,0 +1,210 @@
+/* Extracted CSS from Mouse2VR WebView */
+
+body {
+            font-family: "Segoe UI Variable", "Segoe UI", sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+            color: #1a1a1a;
+            font-size: 14px;
+            line-height: 20px;
+        }
+        
+        .page-container {
+            padding: 32px 24px;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+        
+        /* app-container removed - redundant with app-window */
+        
+        h1 {
+            font-size: 32px;
+            line-height: 40px;
+            margin: 0 0 32px 0;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .section-label {
+            font-size: 24px;
+            line-height: 32px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 32px 0 16px 0;
+        }
+        
+        .status-card, .chart-card, .setting-card {
+            background: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 0 2px rgba(0,0,0,0.06);
+            padding: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .status-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .status-metric {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .status-label {
+            font-size: 12px;
+            line-height: 16px;
+            color: #616161;
+            margin-bottom: 2px;
+        }
+        
+        .status-value {
+            font-size: 20px;
+            line-height: 24px;
+            font-weight: 400;
+            color: #1a1a1a;
+        }
+        
+        .side-by-side {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+            align-items: stretch;
+        }
+        
+        .chart-card {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .chart-description {
+            font-size: 13px;
+            line-height: 18px;
+            color: #616161;
+            margin-bottom: 12px;
+        }
+        
+        .chart-placeholder {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            color: #616161;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            min-height: 120px;
+        }
+        
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .setting-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+        
+        .setting-label {
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: 500;
+        }
+        
+        .slider-value {
+            display: inline-block;
+            min-width: 35px;
+            text-align: right;
+            margin-left: 8px;
+            font-weight: 600;
+        }
+        
+        input[type="range"] {
+            width: 160px;
+        }
+        
+        /* Show tick marks for datalist */
+        input[type="range"]::-webkit-slider-container {
+            background: linear-gradient(to right, 
+                transparent calc(33.33% - 1px), 
+                #ccc calc(33.33% - 1px), 
+                #ccc calc(33.33% + 1px), 
+                transparent calc(33.33% + 1px));
+        }
+        
+        .radio-group, .checkbox-group {
+            display: flex;
+            gap: 12px;
+            font-size: 14px;
+            color: #1a1a1a;
+            align-items: center;
+        }
+        
+        .radio-group label, .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        input[type="checkbox"], input[type="radio"] {
+            accent-color: #0078d4;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+        
+        input[type="radio"] {
+            border-radius: 50%;
+        }
+        
+        /* Toggle switch styles */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+        
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #0078d4;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+

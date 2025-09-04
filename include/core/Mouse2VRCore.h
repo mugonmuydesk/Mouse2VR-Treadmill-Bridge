@@ -3,6 +3,7 @@
 #include <atomic>
 #include <mutex>
 #include <chrono>
+#include <thread>
 
 // Include Windows.h for HWND
 #include "common/WindowsHeaders.h"
@@ -109,6 +110,9 @@ private:
     float m_testTotalDistance = 0.0f;
     float m_testPeakSpeed = 0.0f;
     float m_testTotalSpeed = 0.0f;
+    
+    // Processing thread management
+    std::unique_ptr<std::thread> m_processingThread;
     
     // Internal methods
     void ProcessingLoop();

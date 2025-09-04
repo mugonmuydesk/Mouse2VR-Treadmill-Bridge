@@ -1,0 +1,7 @@
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\Mouse2VRCore.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\Mouse2VRCore.obj
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\Logger.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\Logger.obj
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\RawInputHandler.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\RawInputHandler.obj
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\ViGEmController.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\ViGEmController.obj
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\InputProcessor.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\InputProcessor.obj
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\ConfigManager.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\ConfigManager.obj
+C:\Dev\Mouse2VR-Treadmill-Bridge\src\core\PathUtils.cpp;C:\dev\Mouse2VR-Treadmill-Bridge\build_test\Mouse2VRCore.dir\Debug\PathUtils.obj

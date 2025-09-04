@@ -1,0 +1,10 @@
+^C:\DEV\MOUSE2VR-TREADMILL-BRIDGE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Dev/Mouse2VR-Treadmill-Bridge -BC:/dev/Mouse2VR-Treadmill-Bridge/build_test --check-stamp-file C:/dev/Mouse2VR-Treadmill-Bridge/build_test/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,5 @@
+if(EXISTS "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/Mouse2VR_Tests[1]_tests.cmake")
+  include("C:/dev/Mouse2VR-Treadmill-Bridge/build_test/Mouse2VR_Tests[1]_tests.cmake")
+else()
+  add_test(Mouse2VR_Tests_NOT_BUILT Mouse2VR_Tests_NOT_BUILT)
+endif()

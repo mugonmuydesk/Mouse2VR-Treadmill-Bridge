@@ -14,13 +14,20 @@ bool ConfigManager::Load() {
         // File doesn't exist - use default config but return false to indicate no file was loaded
         std::lock_guard<std::mutex> lock(m_configMutex);
         m_config = AppConfig{};  // Use default configuration
-        std::cout << "Configuration loaded from " << m_configPath << "\n";
+        // Don't print "loaded" message when file doesn't exist
         return false;  // Return false to indicate file was not found (test expects this)
     }
     
     try {
         nlohmann::json j;
         file >> j;
+        
+        // Check if the JSON is empty (which happens if file is empty)
+        if (j.empty()) {
+            std::lock_guard<std::mutex> lock(m_configMutex);
+            m_config = AppConfig{};
+            return false;  // Empty file, treat as non-existent
+        }
         
         std::lock_guard<std::mutex> lock(m_configMutex);
         m_config = JsonToConfig(j);

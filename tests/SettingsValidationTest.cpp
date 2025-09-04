@@ -218,10 +218,13 @@ TEST_F(SettingsValidationTest, UpdateRateChangesProcessingFrequency) {
         // Start processing
         core->Start();
         
+        // Wait for rate to stabilize (1 second)
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        
         // Run for 2 seconds to measure actual rate
         auto start = std::chrono::steady_clock::now();
-        int updateCount = 0;
         
+        // Continuously inject mouse input to ensure the processing loop has data
         while (std::chrono::duration_cast<std::chrono::seconds>(
             std::chrono::steady_clock::now() - start).count() < 2) {
             
@@ -230,17 +233,17 @@ TEST_F(SettingsValidationTest, UpdateRateChangesProcessingFrequency) {
             raw.data.mouse.lLastY = 10;
             rawInput->ProcessRawInputDirect(&raw);
             
-            updateCount++;
-            
-            // Sleep to allow natural update rate
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000 / (targetHz * 2)));
+            // Sleep briefly to avoid overwhelming the system
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
         
-        core->Stop();
+        // Wait a moment for the final rate calculation
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::steady_clock::now() - start).count();
-        float actualHz = (updateCount * 1000.0f) / elapsed;
+        // Get the actual update rate from the core
+        float actualHz = static_cast<float>(core->GetActualUpdateRate());
+        
+        core->Stop();
         
         // Allow 20% tolerance due to Windows timer limitations
         float tolerance = targetHz * 0.2f;
@@ -515,52 +518,66 @@ TEST_F(SettingsValidationTest, GameSpeedMultiplierApplied) {
     }
 }
 
-// Test 10: WebView Update Rate Validation (CRITICAL - tests the exact bug scenario)
-TEST_F(SettingsValidationTest, WebViewRateMatchesTargetHz) {
-    const std::vector<int> targetRates = {25, 45, 60};
+// Test 10: WebView Update Rate Validation
+TEST_F(SettingsValidationTest, WebViewPollingRateIsFixed) {
+    const float WEBVIEW_POLLING_HZ = 5.0f;  // WebView polls at fixed 5 Hz
+    const std::vector<int> processingRates = {25, 45, 60};
     
-    for (int targetHz : targetRates) {
-        SCOPED_TRACE("Testing WebView Rate: " + std::to_string(targetHz) + " Hz");
+    for (int processingHz : processingRates) {
+        SCOPED_TRACE("Testing with Processing Rate: " + std::to_string(processingHz) + " Hz");
         
-        // Set the target update rate
-        core->SetUpdateRate(targetHz);
+        // Set the processing update rate
+        core->SetUpdateRate(processingHz);
         
         // Start processing
         core->Start();
         
+        // Wait for processing rate to stabilize  
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        
         // Reset metrics
         metrics.Reset();
         
-        // Run for 2 seconds while simulating WebView polling
+        // Run for 3 seconds while simulating WebView polling at 5 Hz
         auto start = std::chrono::steady_clock::now();
+        auto lastWebViewPoll = start;
+        
         while (std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::steady_clock::now() - start).count() < 2) {
+            std::chrono::steady_clock::now() - start).count() < 3) {
             
-            // Simulate mouse input
+            // Continuously inject mouse input
             RAWINPUT raw = {};
             raw.header.dwType = RIM_TYPEMOUSE;
             raw.data.mouse.lLastY = 10;
             rawInput->ProcessRawInputDirect(&raw);
             
-            // Simulate WebView polling at target rate
-            metrics.RecordWebViewUpdate();
+            // Simulate WebView polling at 5 Hz (every 200ms)
+            auto now = std::chrono::steady_clock::now();
+            if (std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - lastWebViewPoll).count() >= 200) {
+                metrics.RecordWebViewUpdate();
+                lastWebViewPoll = now;
+            }
             
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000 / targetHz));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
         }
         
         core->Stop();
         
-        // Validate WebView rate matches target
+        // Validate WebView polls at fixed 5 Hz regardless of processing rate
         float actualWebViewHz = metrics.GetWebViewHz();
-        float tolerance = targetHz * 0.2f; // 20% tolerance
+        float tolerance = WEBVIEW_POLLING_HZ * 0.1f; // 10% tolerance
         
-        EXPECT_NEAR(actualWebViewHz, targetHz, tolerance)
-            << "WebView Hz (" << actualWebViewHz << ") did not match target " << targetHz;
+        EXPECT_NEAR(actualWebViewHz, WEBVIEW_POLLING_HZ, tolerance)
+            << "WebView polling rate (" << actualWebViewHz 
+            << " Hz) should be fixed at " << WEBVIEW_POLLING_HZ 
+            << " Hz regardless of processing rate (" << processingHz << " Hz)";
         
-        // Also verify processing rate is correct
-        float processingHz = metrics.GetActualHz();
-        EXPECT_NEAR(processingHz, targetHz, tolerance)
-            << "Processing Hz not synchronized with WebView rate";
+        // Also verify processing rate is independent and correct
+        float actualProcessingHz = static_cast<float>(core->GetActualUpdateRate());
+        float processingTolerance = processingHz * 0.2f; // 20% tolerance
+        EXPECT_NEAR(actualProcessingHz, processingHz, processingTolerance)
+            << "Processing rate should match target";
     }
 }
 

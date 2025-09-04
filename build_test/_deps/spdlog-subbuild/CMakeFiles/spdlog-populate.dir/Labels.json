@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/spdlog-populate"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/40e6797c85ae3fe5362397a02a360a94/spdlog-populate.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/5e06dee53c0c065261d6c801ab38fce1/spdlog-populate-complete.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-build.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-configure.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-download.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-install.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-mkdir.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-patch.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-test.rule"
+		},
+		{
+			"file" : "C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/CMakeFiles/b546065da4200ad95a2063a57c229d39/spdlog-populate-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"spdlog-populate"
+		],
+		"name" : "spdlog-populate"
+	}
+}

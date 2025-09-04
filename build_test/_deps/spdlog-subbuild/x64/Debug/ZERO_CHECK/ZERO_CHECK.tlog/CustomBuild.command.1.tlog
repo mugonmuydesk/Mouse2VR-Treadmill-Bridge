@@ -1,0 +1,10 @@
+^C:\DEV\MOUSE2VR-TREADMILL-BRIDGE\BUILD_TEST\_DEPS\SPDLOG-SUBBUILD\CMAKEFILES\40E6797C85AE3FE5362397A02A360A94\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild -BC:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/spdlog-subbuild/spdlog-populate.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

@@ -115,9 +115,13 @@ void Mouse2VRCore::Start() {
     // Initialize rate tracking
     m_rateTrackingStart = std::chrono::steady_clock::now();
     m_updateCount = 0;
+    m_actualUpdateRate = 0;  // Reset the rate from any previous runs
     
-    // Start processing thread
-    std::thread(&Mouse2VRCore::ProcessingLoop, this).detach();
+    // Start processing thread (ensure no existing thread is running)
+    if (m_processingThread && m_processingThread->joinable()) {
+        m_processingThread->join();
+    }
+    m_processingThread = std::make_unique<std::thread>(&Mouse2VRCore::ProcessingLoop, this);
 }
 
 void Mouse2VRCore::Stop() {
@@ -128,12 +132,22 @@ void Mouse2VRCore::Stop() {
     LOG_INFO("Core", "Stopping Mouse2VR Core...");
     m_isRunning = false;
     
-    // TODO: Stop processing
+    // Wait for processing thread to finish
+    if (m_processingThread && m_processingThread->joinable()) {
+        m_processingThread->join();
+        m_processingThread.reset();
+    }
 }
 
 void Mouse2VRCore::Shutdown() {
     Stop();
     m_isInitialized = false;
+    
+    // Ensure thread is cleaned up
+    if (m_processingThread && m_processingThread->joinable()) {
+        m_processingThread->join();
+        m_processingThread.reset();
+    }
     
     // Restore default timer resolution
     timeEndPeriod(1);

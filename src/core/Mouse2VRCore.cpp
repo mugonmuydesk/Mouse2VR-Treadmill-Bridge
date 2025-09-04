@@ -78,7 +78,7 @@ bool Mouse2VRCore::Initialize(HWND hwnd) {
     procConfig.sensitivity = config.sensitivity;
     procConfig.invertY = config.invertY;
     procConfig.lockX = config.lockX;
-    procConfig.countsPerMeter = 1000.0f; // Default value
+    procConfig.countsPerMeter = config.countsPerMeter;
     m_processor->SetConfig(procConfig);
     
     // Set update rate from config

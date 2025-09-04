@@ -291,74 +291,95 @@ void Mouse2VRCore::StartMovementTest() {
 }
 
 void Mouse2VRCore::ProcessingLoop() {
-    LOG_DEBUG("Core", "ProcessingLoop started with target rate: " + std::to_string(m_updateRateHz.load()) + " Hz");
+    LOG_INFO("Core", "[VR Scheduler] Starting with target rate: " + std::to_string(m_updateRateHz.load()) + " Hz");
     
-    // Use QueryPerformanceCounter for high precision timing
-    LARGE_INTEGER frequency, lastTime, currentTime;
+    // === VR-Safe Startup: Enable precise sleeps only while running ===
+    timeBeginPeriod(1);
+    
+    // === High-precision timing with QueryPerformanceCounter ===
+    LARGE_INTEGER frequency, lastTick, now;
     QueryPerformanceFrequency(&frequency);
-    QueryPerformanceCounter(&lastTime);
+    QueryPerformanceCounter(&lastTick);
     
-    double accumulator = 0.0;
-    int missedTicks = 0;
-    auto lastMissedTickWarning = std::chrono::steady_clock::now();
-    
-    // Diagnostic variables
-    int diagnosticUpdateCount = 0;
-    auto diagnosticStartTime = std::chrono::steady_clock::now();
+    // === Scheduler state ===
+    uint64_t tickCount = 0;
+    double accumulatedError = 0.0;
+    int missedFrames = 0;
+    LARGE_INTEGER schedulerStartTime = lastTick;
     
     while (m_isRunning) {
-        // Recalculate target interval each iteration to pick up rate changes
-        double targetIntervalSeconds = 1.0 / m_updateRateHz.load();
+        // === Dynamic rate updates from config/UI ===
+        double targetHz = static_cast<double>(m_updateRateHz.load());
+        double targetInterval = 1.0 / targetHz;
         
-        QueryPerformanceCounter(&currentTime);
-        double elapsed = static_cast<double>(currentTime.QuadPart - lastTime.QuadPart) / frequency.QuadPart;
-        lastTime = currentTime;
+        // === Process treadmill inputs → stick deflection → game speed ===
+        UpdateController();
+        tickCount++;
         
-        accumulator += elapsed;
+        // === Calculate next frame time ===
+        lastTick.QuadPart += static_cast<LONGLONG>(targetInterval * frequency.QuadPart);
         
-        // Process updates if we've accumulated enough time
-        if (accumulator >= targetIntervalSeconds) {
-            UpdateController();
-            diagnosticUpdateCount++;
-            accumulator -= targetIntervalSeconds;
+        // === VR-Safe timing: sleep most, spin-wait last 2ms ===
+        QueryPerformanceCounter(&now);
+        double remaining = (lastTick.QuadPart - now.QuadPart) / static_cast<double>(frequency.QuadPart);
+        
+        // === Handle late frames (VR-safe: skip instead of blocking) ===
+        if (remaining < 0) {
+            missedFrames++;
+            accumulatedError += -remaining;
             
-            // Log diagnostic every second
-            auto now = std::chrono::steady_clock::now();
-            auto diagnosticElapsed = std::chrono::duration<float>(now - diagnosticStartTime).count();
-            if (diagnosticElapsed >= 1.0f) {
-                float measuredHz = diagnosticUpdateCount / diagnosticElapsed;
-                LOG_DEBUG("Core", "TIMING DIAGNOSTIC: Target=" + std::to_string(m_updateRateHz.load()) + 
-                         "Hz, Measured=" + std::to_string(measuredHz) + 
-                         "Hz, Updates=" + std::to_string(diagnosticUpdateCount) +
-                         ", Accumulator=" + std::to_string(accumulator));
-                diagnosticUpdateCount = 0;
-                diagnosticStartTime = now;
+            // Reset schedule to prevent death spiral
+            lastTick = now;
+            
+            // Only log significant delays (>5ms) to avoid spam
+            if (-remaining > 0.005) {
+                LOG_DEBUG("Core", "[VR Scheduler] Skipped frame (late by " + 
+                         std::to_string(-remaining * 1000.0) + " ms)");
+            }
+        }
+        else {
+            // === Sleep phase: leave CPU for VR compositor ===
+            while (remaining > 0.002) { // More than 2ms left
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                QueryPerformanceCounter(&now);
+                remaining = (lastTick.QuadPart - now.QuadPart) / static_cast<double>(frequency.QuadPart);
             }
             
-            // Track if we're running behind
-            if (accumulator > targetIntervalSeconds) {
-                missedTicks++;
-                auto now = std::chrono::steady_clock::now();
-                if (now - lastMissedTickWarning > std::chrono::seconds(1)) {
-                    LOG_WARNING("Core", "Processing loop missed " + std::to_string(missedTicks) + 
-                               " ticks in last second, actual rate: " + std::to_string(m_actualUpdateRate.load()) + " Hz");
-                    missedTicks = 0;
-                    lastMissedTickWarning = now;
-                }
-                // Clamp accumulator to prevent spiral
-                accumulator = std::min(accumulator, targetIntervalSeconds * 2.0);
+            // === Spin-wait phase: precise timing for last 2ms ===
+            while (remaining > 0) {
+                QueryPerformanceCounter(&now);
+                remaining = (lastTick.QuadPart - now.QuadPart) / static_cast<double>(frequency.QuadPart);
             }
         }
         
-        // Sleep for most of the remaining time
-        double sleepTime = targetIntervalSeconds - accumulator;
-        if (sleepTime > 0.001) { // Only sleep if more than 1ms remains
-            std::this_thread::sleep_for(std::chrono::microseconds(
-                static_cast<int64_t>((sleepTime - 0.001) * 1000000)));
+        // === Comprehensive logging every second ===
+        if (tickCount % static_cast<uint64_t>(targetHz) == 0) {
+            QueryPerformanceCounter(&now);
+            double totalElapsed = (now.QuadPart - schedulerStartTime.QuadPart) / static_cast<double>(frequency.QuadPart);
+            double achievedHz = tickCount / totalElapsed;
+            
+            // Calculate drift in milliseconds
+            double driftMs = accumulatedError * 1000.0;
+            
+            // Update actual rate for UI display
+            m_actualUpdateRate = static_cast<int>(achievedHz + 0.5);
+            
+            // Log scheduler performance
+            LOG_INFO("Core", "[VR Scheduler] Target=" + std::to_string(static_cast<int>(targetHz)) + 
+                    " Hz, Achieved=" + std::to_string(achievedHz) + 
+                    " Hz, Drift=" + (driftMs >= 0 ? "+" : "") + std::to_string(driftMs) + 
+                    " ms, Missed=" + std::to_string(missedFrames) + " frames");
+            
+            // Reset per-second tracking
+            accumulatedError = 0.0;
+            missedFrames = 0;
         }
     }
     
-    LOG_DEBUG("Core", "ProcessingLoop ended");
+    // === VR-Safe shutdown: disable high-res timing ===
+    timeEndPeriod(1);
+    
+    LOG_INFO("Core", "[VR Scheduler] Stopped");
 }
 
 void Mouse2VRCore::UpdateController() {
@@ -366,36 +387,41 @@ void Mouse2VRCore::UpdateController() {
         return;
     }
     
-    // 1. Get mouse deltas
+    // === Get mouse deltas ===
     MouseDelta delta = m_inputHandler->GetAndResetDeltas();
     
-    // 2. Calculate elapsed time
+    // === Calculate elapsed time for velocity calculations ===
     auto now = std::chrono::steady_clock::now();
     auto elapsed = std::chrono::duration<float>(now - m_lastUpdate).count();
     m_lastUpdate = now;
-    
-    // Track actual update rate
-    m_updateCount++;
-    auto rateElapsed = std::chrono::duration<float>(now - m_rateTrackingStart).count();
-    if (rateElapsed >= 1.0f) {
-        m_actualUpdateRate = static_cast<int>(m_updateCount / rateElapsed);
-        m_updateCount = 0;
-        m_rateTrackingStart = now;
-        LOG_DEBUG("Core", "Actual update rate: " + std::to_string(m_actualUpdateRate.load()) + " Hz");
-    }
     
     // Skip if no time has passed (prevent division by zero)
     if (elapsed <= 0.0f) {
         return;
     }
     
-    // 3. Process input
+    // === Process input (treadmill → stick deflection) ===
     float stickX, stickY;
     m_processor->ProcessDelta(delta, elapsed, stickX, stickY);
     
-    // 4. Update controller (Y-axis only for treadmill)
+    // === Update virtual controller (Y-axis only for treadmill) ===
     m_controller->SetLeftStick(0.0f, stickY);
     m_controller->Update();
+    
+    // === Extended diagnostic logging (if enabled) ===
+    static bool enableDetailedLogging = false; // Can be toggled via config
+    static int logCounter = 0;
+    if (enableDetailedLogging && ++logCounter % 50 == 0) { // Log every 50th update
+        auto config = m_processor->GetConfig();
+        float dpi = config.countsPerMeter / 39.3701f;
+        float physicalSpeed = (delta.dy / elapsed) / dpi * 0.0254f; // m/s
+        float gameSpeed = stickY * 6.1f * config.sensitivity / 100.0f; // m/s in game
+        
+        LOG_DEBUG("Core", "[VR Detail] DeltaY=" + std::to_string(delta.dy) + 
+                 " counts, Physical=" + std::to_string(physicalSpeed) + 
+                 " m/s, Game=" + std::to_string(gameSpeed) + 
+                 " m/s, Stick=" + std::to_string(stickY * 100) + "%");
+    }
     
     // 5. Update state for UI
     {

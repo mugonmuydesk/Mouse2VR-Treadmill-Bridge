@@ -2,7 +2,7 @@
 
 Transform any treadmill into a VR locomotion device using a simple USB mouse!
 
-**Latest: v2.9.1** - Fixed WebView refresh rate, improved test coverage
+**Latest: v2.9.3** - Fixed dynamic rate changes, UI improvements, all performance issues resolved
 
 ## 🎯 What It Does
 
@@ -23,7 +23,12 @@ Mouse2VR captures movement from a mouse sensor attached to your treadmill belt a
 - **Toggle Switch Control** - Simple on/off for virtual controller
 - **Sensitivity Slider** - Visual feedback with 1.0 reference notch
 
-### New in v2.9.1
+### New in v2.9.3
+- **Fixed Dynamic Rate Changes** - Mouse processing rate now correctly updates when changed (25/45/60 Hz)
+- **UI Improvements** - Clearer metrics: "Treadmill Speed", "Stick Deflection", "Predicted Game Speed"
+- **Removed Unused Features** - Removed non-functional "Adaptive Mode" checkbox
+
+### New in v2.9.1-2.9.2
 - **Fixed WebView Polling** - UI now maintains constant 5 Hz refresh regardless of backend rate
 - **Improved Test Coverage** - 36/39 tests passing, up from 35/38
 - **Backend/UI Separation** - Backend processes at 25/45/60 Hz, UI refreshes at 5 Hz
@@ -184,6 +189,23 @@ git clone https://github.com/mugonmuydesk/Mouse2VR-Treadmill-Bridge.git
 cd Mouse2VR-Treadmill-Bridge
 cmake -B build
 cmake --build build --config Release
+```
+
+## 🧪 Test Status
+
+**Current: 36/39 tests passing**
+
+### Test Categories
+- **ConfigManagerTest**: 4/5 passing (LoadNonExistentFileReturnsFalse failing)
+- **CoreTest**: 5/5 passing ✅
+- **InputProcessorTest**: 7/7 passing ✅
+- **SettingsValidationTest**: 20/22 passing (VirtualControllerToggle, BackendQueryRateMatches failing)
+
+### Running Tests
+```bash
+cmake -B build_test -DBUILD_TESTS=ON
+cmake --build build_test --config Debug
+./build_test/bin/Debug/Mouse2VR_Tests.exe
 ```
 
 ## 📄 Technical Details

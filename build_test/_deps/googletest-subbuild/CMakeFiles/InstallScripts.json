@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"C:/dev/Mouse2VR-Treadmill-Bridge/build_test/_deps/googletest-subbuild/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

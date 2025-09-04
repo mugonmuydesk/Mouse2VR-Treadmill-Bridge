@@ -33,8 +33,11 @@ public:
     void EndCalibration(float distanceMeters);
     bool IsCalibrating() const { return m_calibrating; }
     
-    // Get current speed in m/s
+    // Get game speed in m/s (real world speed * sensitivity multiplier)
     float GetSpeedMetersPerSecond() const { return m_currentSpeed; }
+    
+    // Get real world speed in m/s (without multiplier)
+    float GetRealWorldSpeed() const { return m_realWorldSpeed; }
     
     // Get stick deflection percentage (0-100)
     float GetStickDeflectionPercent() const;
@@ -47,7 +50,8 @@ private:
     MouseDelta m_calibrationDeltas;
     
     // Current state
-    float m_currentSpeed = 0.0f;
+    float m_currentSpeed = 0.0f;      // Game speed (with multiplier)
+    float m_realWorldSpeed = 0.0f;    // Real world speed (without multiplier)
     float m_lastStickX = 0.0f;
     float m_lastStickY = 0.0f;
     

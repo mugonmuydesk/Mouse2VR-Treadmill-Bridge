@@ -458,7 +458,64 @@ TEST_F(SettingsValidationTest, SpeedCalculationAccuracy) {
     }
 }
 
-// Test 9: WebView Update Rate Validation (CRITICAL - tests the exact bug scenario)
+// Test 9: Game Speed Multiplier Test - Validates that predicted game speed = real world speed * multiplier
+TEST_F(SettingsValidationTest, GameSpeedMultiplierApplied) {
+    const std::vector<float> multipliers = {0.5f, 1.0f, 1.5f, 2.0f, 3.0f};
+    const int inputMickeys = 1000;
+    const int dpi = 1000;
+    
+    for (float multiplier : multipliers) {
+        SCOPED_TRACE("Testing Multiplier: " + std::to_string(multiplier));
+        
+        // Apply settings with the multiplier
+        AppConfig config;
+        config.countsPerMeter = dpi * 39.3701f;
+        config.sensitivity = multiplier;
+        core->UpdateSettings(config);
+        
+        // Wait for setting to propagate
+        ASSERT_TRUE(WaitForSettingChange([&]() {
+            auto procConfig = core->GetProcessorConfig();
+            return std::abs(procConfig.sensitivity - multiplier) < 0.01f;
+        })) << "Multiplier setting did not propagate within 100ms";
+        
+        // Reset and inject input
+        metrics.Reset();
+        rawInput->GetAndResetDeltas();
+        InjectMouseMovement(inputMickeys, 1000); // 1000 mickeys over 1 second
+        
+        // Calculate the complete chain
+        const float HL2_MAX_SPEED = 6.1f;
+        
+        // Step 1: Raw input to real world speed
+        float realWorldSpeed = (inputMickeys / static_cast<float>(dpi)) * 0.0254f; // m/s
+        
+        // Step 2: Real world speed to stick deflection (with multiplier)
+        float expectedStickDeflection = (realWorldSpeed / HL2_MAX_SPEED) * multiplier;
+        
+        // Step 3: Stick deflection to game speed
+        float expectedGameSpeed = expectedStickDeflection * HL2_MAX_SPEED;
+        // This simplifies to: realWorldSpeed * multiplier
+        
+        // Get actual values from the core
+        auto state = core->GetCurrentState();
+        float actualGameSpeed = state.speed; // Now correctly returns game speed with multiplier
+        
+        // Verify stick deflection is correct
+        EXPECT_NEAR(metrics.lastStickY, expectedStickDeflection, 0.001f)
+            << "Stick deflection (" << metrics.lastStickY << ") doesn't match expected (" 
+            << expectedStickDeflection << ")";
+        
+        // Verify game speed is correct (within 10% tolerance due to timing issues)
+        float tolerance = expectedGameSpeed * 0.10f; // 10% tolerance
+        EXPECT_NEAR(actualGameSpeed, expectedGameSpeed, tolerance)
+            << "Game speed (" << actualGameSpeed << " m/s) should be stick deflection (" 
+            << expectedStickDeflection << ") * max speed (" << HL2_MAX_SPEED 
+            << ") = " << expectedGameSpeed << " m/s";
+    }
+}
+
+// Test 10: WebView Update Rate Validation (CRITICAL - tests the exact bug scenario)
 TEST_F(SettingsValidationTest, WebViewRateMatchesTargetHz) {
     const std::vector<int> targetRates = {25, 45, 60};
     

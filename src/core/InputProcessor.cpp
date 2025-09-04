@@ -14,7 +14,9 @@ void InputProcessor::ProcessDelta(const MouseDelta& delta, float deltaTime, floa
     if (m_config.countsPerMeter > 0 && deltaTime > 0) {
         // Convert counts/sec to m/s using DPI-based calibration
         // countsPerMeter = DPI * 39.3701 (inches per meter)
-        m_currentSpeed = std::abs(delta.y) / m_config.countsPerMeter / deltaTime;
+        m_realWorldSpeed = std::abs(delta.y) / m_config.countsPerMeter / deltaTime;
+        // Apply sensitivity multiplier to get game speed
+        m_currentSpeed = m_realWorldSpeed * m_config.sensitivity;
     }
     
     // Calculate stick deflection based on physical speed

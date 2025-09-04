@@ -183,6 +183,30 @@ Contributions welcome! Please check existing issues first.
 - Curved speed-to-stick mapping
 - SteamVR overlay integration
 
+## 🧪 Testing Status
+
+### Automated Testing
+A comprehensive automated test suite has been implemented to validate that all runtime settings affect behavior correctly:
+
+- **DPI Settings Validation** - Tests 400, 800, 1000, 1200, 1600, 3200 DPI
+- **Sensitivity Scaling** - Tests 0.5x, 1.0x, 1.5x, 2.0x sensitivity  
+- **Update Rate Tests** - Validates 25 Hz, 45 Hz, 60 Hz processing frequencies
+- **Axis Options** - Tests Y-axis inversion and X-axis lock
+- **Virtual Controller Toggle** - Tests enable/disable behavior
+- **Runtime Setting Changes** - Validates settings can change during operation
+- **WebView Rate Validation** - Ensures WebView polling matches target Hz
+- **Cross-Setting Persistence** - Tests multiple settings don't revert to defaults
+
+**Current Status**: Tests compile successfully but require ViGEm driver to run. CI environment lacks driver support, so tests must be run locally on development machines with ViGEm installed.
+
+### Enhanced Logging (v2.8.5+)
+Every log entry now includes complete settings snapshot:
+```
+[2025-09-04 10:45:23] [INFO] [Core] Message [DPI:1000|Sens:1.0|Hz:45|InvY:0|LockX:1|Run:1|ActHz:44|Spd:0.25|Stk:4.1%]
+```
+
+This provides moment-by-moment tracking of all settings changes, making it easy to verify settings propagation and debug issues.
+
 ## 📜 License
 
 MIT License - See [LICENSE](LICENSE) file for details

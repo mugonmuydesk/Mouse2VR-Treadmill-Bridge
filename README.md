@@ -84,10 +84,12 @@ Multiplies mouse input. Default 1.0 works for most setups.
 - Higher = less belt movement needed
 
 **Target Update Rate**  
-How often to process input (Hz). Higher = more responsive.
+How often mouse input is processed and sent to the virtual controller (Hz). This directly affects gameplay responsiveness. Higher = more responsive.
 - 25 Hz - Low latency, minimal CPU usage
-- 45 Hz - Balanced performance
+- 45 Hz - Balanced performance (recommended)
 - 60 Hz - Smoothest movement
+
+⚠️ **Important**: This controls the mouse→controller processing rate, NOT the GUI display rate. See "Understanding Update Rates" below for details.
 
 **Axis Options**
 - **Invert Y** - Reverses forward/backward if needed
@@ -114,7 +116,27 @@ With v2.8.3 performance optimizations:
 - Target 45 Hz → Actual 44-45 Hz (stable)
 - Target 60 Hz → Actual 58-60 Hz
 
-The app now uses high-resolution timers (1ms precision) and QueryPerformanceCounter for accurate timing. UI updates at 5 Hz to reduce overhead while maintaining responsiveness.
+The app now uses high-resolution timers (1ms precision) and QueryPerformanceCounter for accurate timing.
+
+### Understanding Update Rates - Two Separate Systems
+
+The app has two completely independent update rates:
+
+**1. Mouse Processing Rate (User Configurable: 25/45/60 Hz)**
+- **What it controls**: How often mouse movement is captured and sent to the virtual Xbox controller
+- **Where to change it**: Use the dropdown in the GUI settings panel
+- **Impact**: Directly affects gameplay - higher rates = smoother movement in VR
+- **Performance**: Higher rates use more CPU but provide better responsiveness
+- **Continues running**: Even if you minimize or close the GUI window
+
+**2. GUI Display Rate (Fixed: 5 Hz)**  
+- **What it controls**: How often the speed graph and statistics update in the app window
+- **Cannot be changed**: Hardcoded at 5 Hz (5 updates per second)
+- **Impact**: Only affects visual feedback - does NOT affect gameplay
+- **Why 5 Hz?**: Human eyes can't read numbers faster anyway, reduces CPU overhead
+- **Just monitoring**: Like a car's dashboard - shows what's happening but doesn't control the engine
+
+**Key Point**: The "Target Update Rate" setting in the GUI only changes the mouse processing rate (gameplay), not how fast the GUI refreshes. Your VR movement runs at your selected rate (25/45/60 Hz) while the speed display updates at a fixed 5 Hz.
 
 ## 🛠️ Troubleshooting
 

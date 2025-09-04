@@ -423,4 +423,44 @@ void Mouse2VRCore::UpdateController() {
     }
 }
 
+// Test interface implementations
+Mouse2VRCore::ProcessorConfig Mouse2VRCore::GetProcessorConfig() const {
+    ProcessorConfig config;
+    if (m_processor) {
+        auto procConfig = m_processor->GetConfig();
+        config.countsPerMeter = procConfig.countsPerMeter;
+        config.sensitivity = procConfig.sensitivity;
+        config.invertY = procConfig.invertY;
+        config.lockX = procConfig.lockX;
+        config.lockY = procConfig.lockY;
+        config.dpi = static_cast<int>(procConfig.countsPerMeter / 39.3701f);
+    }
+    return config;
+}
+
+void Mouse2VRCore::UpdateSettings(const AppConfig& newConfig) {
+    if (m_config) {
+        m_config->SetConfig(newConfig);
+        
+        // Apply settings to processor
+        if (m_processor) {
+            auto procConfig = m_processor->GetConfig();
+            procConfig.countsPerMeter = newConfig.countsPerMeter;
+            procConfig.sensitivity = newConfig.sensitivity;
+            procConfig.invertY = newConfig.invertY;
+            procConfig.lockX = newConfig.lockX;
+            procConfig.lockY = newConfig.lockY;
+            m_processor->SetConfig(procConfig);
+        }
+        
+        // Apply update rate
+        m_updateRateHz = newConfig.targetUpdateRate;
+    }
+}
+
+void Mouse2VRCore::ForceUpdate() {
+    // Force a single update cycle for testing
+    UpdateController();
+}
+
 } // namespace Mouse2VR

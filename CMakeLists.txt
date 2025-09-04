@@ -18,6 +18,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 option(BUILD_CONSOLE "Build console application" ON)
 option(BUILD_WEBVIEW "Build WebView2 application" ON)
 option(BUILD_TESTS "Build unit tests" ON)
+option(BUILD_VALIDATION_TESTS "Build settings validation tests" ON)
 
 # Add subdirectories
 add_subdirectory(external)
@@ -33,6 +34,17 @@ FetchContent_Declare(
     GIT_TAG v1.13.0
 )
 FetchContent_MakeAvailable(spdlog)
+
+# Add GoogleTest for validation tests
+if(BUILD_VALIDATION_TESTS)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG v1.14.0
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Core library
 add_library(Mouse2VRCore STATIC
@@ -171,6 +183,7 @@ if(BUILD_TESTS)
         tests/test_core.cpp
         tests/test_input_processor.cpp
         tests/test_config_manager.cpp
+        tests/SettingsValidationTest.cpp
     )
     
     target_link_libraries(Mouse2VR_Tests

@@ -42,6 +42,9 @@ public:
     // Process Raw Input message
     void ProcessRawInput(LPARAM lParam);
     
+    // Direct input injection for testing
+    void ProcessRawInputDirect(const RAWINPUT* rawInput);
+    
     // Get if initialized
     bool IsInitialized() const { return m_initialized; }
 

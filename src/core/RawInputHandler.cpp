@@ -71,6 +71,20 @@ MouseDelta RawInputHandler::GetDeltas() const {
     return m_accumulatedDeltas;
 }
 
+void RawInputHandler::ProcessRawInputDirect(const RAWINPUT* raw) {
+    if (raw && raw->header.dwType == RIM_TYPEMOUSE) {
+        std::lock_guard<std::mutex> lock(m_deltaMutex);
+        m_accumulatedDeltas.x += raw->data.mouse.lLastX;
+        m_accumulatedDeltas.y += raw->data.mouse.lLastY;
+        
+        // Debug logging for raw input
+        if (raw->data.mouse.lLastY != 0) {
+            LOG_DEBUG("RawInput", "Raw mouse Y: " + std::to_string(raw->data.mouse.lLastY) + 
+                      " (accumulated: " + std::to_string(m_accumulatedDeltas.y) + ")");
+        }
+    }
+}
+
 void RawInputHandler::ProcessRawInput(LPARAM lParam) {
     UINT dwSize = 0;
     GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &dwSize, sizeof(RAWINPUTHEADER));

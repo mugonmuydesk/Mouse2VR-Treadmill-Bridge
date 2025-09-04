@@ -14,6 +14,7 @@ class RawInputHandler;
 class ViGEmController;
 class InputProcessor;
 class ConfigManager;
+struct AppConfig;
 
 // Simple data structure for mouse/controller state
 struct ControllerState {
@@ -60,6 +61,20 @@ public:
     
     // Internal access for WM_INPUT processing
     RawInputHandler* GetInputHandler() const { return m_inputHandler.get(); }
+    
+    // Test interfaces
+    struct ProcessorConfig {
+        float countsPerMeter = 39370.1f;
+        float sensitivity = 1.0f;
+        bool invertY = false;
+        bool lockX = false;
+        bool lockY = false;
+        int dpi = 1000;
+    };
+    
+    ProcessorConfig GetProcessorConfig() const;
+    void UpdateSettings(const struct AppConfig& config);
+    void ForceUpdate();
     
 private:
     std::unique_ptr<RawInputHandler> m_inputHandler;

@@ -838,8 +838,8 @@ std::wstring WebViewWindow::GetEmbeddedHTML() {
             if (window.mouse2vr) {
                 window.mouse2vr.setUpdateRate(backendHz);
             }
-            // Update polling rate to match backend rate
-            startPolling(backendHz);
+            // WebView polling should always stay at 5 Hz for UI updates
+            // Backend processing rate is independent of UI refresh rate
         }
         
         function updateAxisOptions() {

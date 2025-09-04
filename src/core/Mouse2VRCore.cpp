@@ -156,6 +156,7 @@ void Mouse2VRCore::Shutdown() {
 }
 
 ControllerState Mouse2VRCore::GetCurrentState() const {
+    m_speedQueryCount++;  // Track that speed was queried
     std::lock_guard<std::mutex> lock(m_stateMutex);
     return m_currentState;
 }

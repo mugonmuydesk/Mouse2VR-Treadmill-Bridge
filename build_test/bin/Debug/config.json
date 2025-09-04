@@ -12,11 +12,11 @@
         "lockX": true,
         "lockY": false,
         "maxSpeed": 1.0,
-        "sensitivity": 1.0
+        "sensitivity": 0.5
     },
     "update": {
         "adaptiveMode": false,
         "idleUpdateIntervalMs": 33,
-        "updateIntervalMs": 40
+        "updateIntervalMs": 16
     }
 }

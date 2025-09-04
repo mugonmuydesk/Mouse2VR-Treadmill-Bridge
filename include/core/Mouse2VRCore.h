@@ -55,6 +55,8 @@ public:
     double GetCurrentSpeed() const;
     double GetAverageSpeed() const;
     int GetActualUpdateRate() const;
+    int GetSpeedQueryCount() const { return m_speedQueryCount.load(); }
+    void ResetSpeedQueryCount() { m_speedQueryCount = 0; }
     
     // Testing
     void StartMovementTest();
@@ -101,6 +103,7 @@ private:
     std::chrono::steady_clock::time_point m_rateTrackingStart;
     std::atomic<int> m_updateCount{0};
     std::atomic<int> m_actualUpdateRate{0};
+    mutable std::atomic<int> m_speedQueryCount{0};
     
     // Testing
     std::atomic<bool> m_isTestRunning{false};

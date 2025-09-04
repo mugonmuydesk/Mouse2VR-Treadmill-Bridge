@@ -23,20 +23,26 @@ public:
 
     static Logger& Instance(); // Moved to Logger.cpp
 
-    void Initialize(const std::string& logPath = "logs/debug.log") {
+    void Initialize(const std::string& logPath = "logs/debug.log", bool useExeRelative = true) {
         std::lock_guard<std::recursive_mutex> lock(m_mutex);
         
+        std::string actualPath = logPath;
+        if (useExeRelative) {
+            // Will be set from Mouse2VRCore with exe-relative path
+            actualPath = logPath;
+        }
+        
         // Create logs directory if it doesn't exist
-        std::filesystem::path logDir = std::filesystem::path(logPath).parent_path();
+        std::filesystem::path logDir = std::filesystem::path(actualPath).parent_path();
         if (!logDir.empty()) {
             std::filesystem::create_directories(logDir);
         }
         
         // Open log file
-        m_file.open(logPath, std::ios::app);
+        m_file.open(actualPath, std::ios::app);
         if (m_file.is_open()) {
             Log(INFO, "Logger", "=== Logger Initialized ===");
-            Log(INFO, "Logger", "Log file: " + logPath);
+            Log(INFO, "Logger", "Log file: " + actualPath);
         }
     }
 

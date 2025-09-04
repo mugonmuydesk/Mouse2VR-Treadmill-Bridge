@@ -33,6 +33,7 @@ add_library(Mouse2VRCore STATIC
     src/core/ViGEmController.cpp
     src/core/InputProcessor.cpp
     src/core/ConfigManager.cpp
+    src/core/PathUtils.cpp
 )
 
 target_include_directories(Mouse2VRCore PUBLIC

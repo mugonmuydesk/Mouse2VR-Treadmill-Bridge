@@ -9,6 +9,7 @@
 
 // Include complete type definitions for std::unique_ptr destructors
 #include "core/ConfigManager.h"
+#include "core/PathUtils.h"
 #include "core/RawInputHandler.h"
 #include "core/ViGEmController.h"
 #include "core/InputProcessor.h"
@@ -44,7 +45,9 @@ bool Mouse2VRCore::Initialize(HWND hwnd) {
     m_inputHandler = std::make_unique<RawInputHandler>();
     m_controller = std::make_unique<ViGEmController>();
     m_processor = std::make_unique<InputProcessor>();
-    m_config = std::make_unique<ConfigManager>();
+    // Use exe-relative path for config
+    std::string configPath = PathUtils::GetExecutablePath("config.json");
+    m_config = std::make_unique<ConfigManager>(configPath);
     
     // Initialize RawInputHandler with window handle if provided
     if (hwnd) {

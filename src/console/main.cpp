@@ -12,6 +12,7 @@
 #include "core/ViGEmController.h"
 #include "core/InputProcessor.h"
 #include "core/ConfigManager.h"
+#include "core/PathUtils.h"
 
 std::atomic<bool> g_running{true};
 std::condition_variable g_updateCV;
@@ -46,8 +47,9 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, SignalHandler);
     std::signal(SIGTERM, SignalHandler);
     
-    // Load configuration
-    Mouse2VR::ConfigManager configManager("config.json");
+    // Load configuration from exe-relative path
+    std::string configPath = Mouse2VR::PathUtils::GetExecutablePath("config.json");
+    Mouse2VR::ConfigManager configManager(configPath);
     if (!configManager.Load()) {
         std::cout << "Using default configuration\n";
     }

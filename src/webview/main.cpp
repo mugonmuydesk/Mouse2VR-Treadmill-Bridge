@@ -14,6 +14,7 @@
 #include "WebViewWindow.h"
 #include "core/Mouse2VRCore.h"
 #include "core/RawInputHandler.h"
+#include "core/PathUtils.h"
 #include "common/Logger.h"
 
 using namespace Microsoft::WRL;
@@ -101,7 +102,9 @@ public:
         
         // Initialize logger with error handling
         try {
-            Mouse2VR::Logger::Instance().Initialize("logs/mouse2vr.log");
+            // Use exe-relative path for logs
+            std::string logPath = Mouse2VR::PathUtils::GetExecutablePath("logs/mouse2vr.log");
+            Mouse2VR::Logger::Instance().Initialize(logPath);
             LOG_INFO("App", "Mouse2VR WebView2 starting...");
         } catch (const std::exception& e) {
             MessageBoxA(nullptr, ("Failed to initialize logger: " + std::string(e.what())).c_str(), 

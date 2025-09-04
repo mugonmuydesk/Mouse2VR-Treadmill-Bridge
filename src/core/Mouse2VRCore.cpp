@@ -298,7 +298,6 @@ void Mouse2VRCore::ProcessingLoop() {
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&lastTime);
     
-    double targetIntervalSeconds = 1.0 / m_updateRateHz.load();
     double accumulator = 0.0;
     int missedTicks = 0;
     auto lastMissedTickWarning = std::chrono::steady_clock::now();
@@ -308,6 +307,9 @@ void Mouse2VRCore::ProcessingLoop() {
     auto diagnosticStartTime = std::chrono::steady_clock::now();
     
     while (m_isRunning) {
+        // Recalculate target interval each iteration to pick up rate changes
+        double targetIntervalSeconds = 1.0 / m_updateRateHz.load();
+        
         QueryPerformanceCounter(&currentTime);
         double elapsed = static_cast<double>(currentTime.QuadPart - lastTime.QuadPart) / frequency.QuadPart;
         lastTime = currentTime;

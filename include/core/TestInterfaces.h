@@ -35,7 +35,7 @@ public:
     // Force an update cycle (for testing)
     virtual void ForceUpdate() = 0;
     
-    // Get last controller state
+    // Get last controller state (using existing struct from Mouse2VRCore.h)
     virtual struct ControllerState GetLastControllerState() const = 0;
 };
 
@@ -46,14 +46,6 @@ struct UpdateMetrics {
     float webViewUpdateHz = 0.0f;
     int totalUpdates = 0;
     std::chrono::steady_clock::time_point lastUpdate;
-};
-
-struct ControllerState {
-    float leftStickX = 0.0f;
-    float leftStickY = 0.0f;
-    float rightStickX = 0.0f;
-    float rightStickY = 0.0f;
-    bool isConnected = false;
 };
 
 struct ProcessorConfig {

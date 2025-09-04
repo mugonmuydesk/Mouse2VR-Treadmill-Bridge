@@ -46,14 +46,14 @@ protected:
     
     HWND CreateTestWindow() {
         HINSTANCE hInstance = GetModuleHandle(nullptr);
-        WNDCLASSEX wc = {0};
-        wc.cbSize = sizeof(WNDCLASSEX);
+        WNDCLASSEXW wc = {0};
+        wc.cbSize = sizeof(WNDCLASSEXW);
         wc.lpfnWndProc = DefWindowProc;
         wc.hInstance = hInstance;
         wc.lpszClassName = L"TestWindow";
-        RegisterClassEx(&wc);
+        RegisterClassExW(&wc);
         
-        return CreateWindowEx(0, L"TestWindow", L"Test", WS_OVERLAPPEDWINDOW,
+        return CreateWindowExW(0, L"TestWindow", L"Test", WS_OVERLAPPEDWINDOW,
             0, 0, 100, 100, nullptr, nullptr, hInstance, nullptr);
     }
     
@@ -82,7 +82,7 @@ protected:
             metrics.RecordUpdate();
             
             auto state = core->GetCurrentState();
-            metrics.RecordControllerState(state.stickX, state.stickY);
+            metrics.RecordControllerState(static_cast<float>(state.stickX), static_cast<float>(state.stickY));
             
             std::this_thread::sleep_for(sleepTime);
         }
@@ -454,6 +454,157 @@ TEST_F(SettingsValidationTest, SpeedCalculationAccuracy) {
         EXPECT_NEAR(actualSpeed, test.expectedSpeed, 0.001f)
             << "Speed calculation error exceeds 0.001 m/s tolerance";
     }
+}
+
+// Test 9: WebView Update Rate Validation (CRITICAL - tests the exact bug scenario)
+TEST_F(SettingsValidationTest, WebViewRateMatchesTargetHz) {
+    const std::vector<int> targetRates = {25, 45, 60};
+    
+    for (int targetHz : targetRates) {
+        SCOPED_TRACE("Testing WebView Rate: " + std::to_string(targetHz) + " Hz");
+        
+        // Set the target update rate
+        core->SetUpdateRate(targetHz);
+        
+        // Start processing
+        core->Start();
+        
+        // Reset metrics
+        metrics.Reset();
+        
+        // Run for 2 seconds while simulating WebView polling
+        auto start = std::chrono::steady_clock::now();
+        while (std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - start).count() < 2) {
+            
+            // Simulate mouse input
+            RAWINPUT raw = {};
+            raw.header.dwType = RIM_TYPEMOUSE;
+            raw.data.mouse.lLastY = 10;
+            rawInput->ProcessRawInputDirect(&raw);
+            
+            // Simulate WebView polling at target rate
+            metrics.RecordWebViewUpdate();
+            
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000 / targetHz));
+        }
+        
+        core->Stop();
+        
+        // Validate WebView rate matches target
+        float actualWebViewHz = metrics.GetWebViewHz();
+        float tolerance = targetHz * 0.2f; // 20% tolerance
+        
+        EXPECT_NEAR(actualWebViewHz, targetHz, tolerance)
+            << "WebView Hz (" << actualWebViewHz << ") did not match target " << targetHz;
+        
+        // Also verify processing rate is correct
+        float processingHz = metrics.GetActualHz();
+        EXPECT_NEAR(processingHz, targetHz, tolerance)
+            << "Processing Hz not synchronized with WebView rate";
+    }
+}
+
+// Test 10: Cross-Setting Persistence (tests all settings together don't revert)
+TEST_F(SettingsValidationTest, CrossSettingPersistence) {
+    // Set initial configuration
+    AppConfig config1;
+    config1.countsPerMeter = 1000 * 39.3701f;
+    config1.sensitivity = 1.0f;
+    config1.updateIntervalMs = 40; // 25 Hz
+    config1.invertY = false;
+    core->UpdateSettings(config1);
+    
+    // Wait and verify
+    std::this_thread::sleep_for(100ms);
+    auto check1 = core->GetProcessorConfig();
+    EXPECT_EQ(check1.dpi, 1000);
+    EXPECT_NEAR(check1.sensitivity, 1.0f, 0.01f);
+    
+    // Change to different configuration
+    AppConfig config2;
+    config2.countsPerMeter = 1600 * 39.3701f;
+    config2.sensitivity = 1.5f;
+    config2.updateIntervalMs = 22; // 45 Hz
+    config2.invertY = true;
+    core->UpdateSettings(config2);
+    
+    // Wait and verify new settings
+    std::this_thread::sleep_for(100ms);
+    auto check2 = core->GetProcessorConfig();
+    EXPECT_EQ(check2.dpi, 1600);
+    EXPECT_NEAR(check2.sensitivity, 1.5f, 0.01f);
+    EXPECT_TRUE(check2.invertY);
+    
+    // Change back to original
+    core->UpdateSettings(config1);
+    
+    // Verify it actually changed back (not stuck at config2)
+    std::this_thread::sleep_for(100ms);
+    auto check3 = core->GetProcessorConfig();
+    EXPECT_EQ(check3.dpi, 1000);
+    EXPECT_NEAR(check3.sensitivity, 1.0f, 0.01f);
+    EXPECT_FALSE(check3.invertY);
+    
+    // Run for a while and verify settings persist
+    core->Start();
+    for (int i = 0; i < 10; i++) {
+        std::this_thread::sleep_for(100ms);
+        
+        auto currentConfig = core->GetProcessorConfig();
+        EXPECT_EQ(currentConfig.dpi, 1000) << "DPI reverted at iteration " << i;
+        EXPECT_NEAR(currentConfig.sensitivity, 1.0f, 0.01f) << "Sensitivity reverted at iteration " << i;
+        EXPECT_FALSE(currentConfig.invertY) << "InvertY reverted at iteration " << i;
+    }
+    core->Stop();
+}
+
+// Test 11: WebView Rate Persistence After Changes
+TEST_F(SettingsValidationTest, WebViewRatePersistsAfterSettingChanges) {
+    // Start at 45 Hz
+    core->SetUpdateRate(45);
+    core->Start();
+    
+    // Measure initial rate
+    metrics.Reset();
+    std::this_thread::sleep_for(1000ms);
+    float initial45Hz = metrics.GetWebViewHz();
+    EXPECT_NEAR(initial45Hz, 45.0f, 9.0f) << "Initial 45 Hz not established";
+    
+    // Change DPI while running (shouldn't affect Hz)
+    AppConfig config;
+    config.countsPerMeter = 1600 * 39.3701f;
+    config.updateIntervalMs = 22; // Still 45 Hz
+    core->UpdateSettings(config);
+    
+    // Measure after DPI change
+    metrics.Reset();
+    std::this_thread::sleep_for(1000ms);
+    float afterDpiChange = metrics.GetWebViewHz();
+    EXPECT_NEAR(afterDpiChange, 45.0f, 9.0f) 
+        << "WebView Hz changed after DPI update (should remain at 45)";
+    
+    // Change to 60 Hz
+    core->SetUpdateRate(60);
+    
+    // Verify it actually changes to 60 (not stuck at 45)
+    metrics.Reset();
+    std::this_thread::sleep_for(1000ms);
+    float after60Hz = metrics.GetWebViewHz();
+    EXPECT_NEAR(after60Hz, 60.0f, 12.0f) 
+        << "WebView Hz didn't change to 60 (stuck at previous rate)";
+    
+    // Change back to 25 Hz
+    core->SetUpdateRate(25);
+    
+    // Verify it changes to 25 (not stuck at 60)
+    metrics.Reset();
+    std::this_thread::sleep_for(1000ms);
+    float after25Hz = metrics.GetWebViewHz();
+    EXPECT_NEAR(after25Hz, 25.0f, 5.0f) 
+        << "WebView Hz didn't change to 25 (stuck at 60)";
+    
+    core->Stop();
 }
 
 // Note: main() is in test_main.cpp

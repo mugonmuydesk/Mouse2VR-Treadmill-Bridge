@@ -455,3 +455,5 @@ TEST_F(SettingsValidationTest, SpeedCalculationAccuracy) {
             << "Speed calculation error exceeds 0.001 m/s tolerance";
     }
 }
+
+// Note: main() is in test_main.cpp

@@ -11,7 +11,7 @@ namespace WebView {
 inline std::wstring GetEmbeddedHTML() {
     std::wstring html;
     
-    // Part 1 of 1
+    // Part 1 of 2
     html += LR"HTML(
 <!DOCTYPE html>
 <html lang="en">
@@ -425,8 +425,10 @@ let isRunning = false;
             const sensSlider = document.getElementById('sensitivity');
             if (sensSlider) {
                 sensSlider.value = cfg.sensitivity;
-                updateSensitivityValue(cfg.sensitivity);
-                sensitivity = cfg.sensitivity;
+                updateSensitivityValue(cfg.sensitivity);)HTML";
+
+    // Part 2 of 2
+    html += LR"HTML(                sensitivity = cfg.sensitivity;
             }
             
             // Backend rate

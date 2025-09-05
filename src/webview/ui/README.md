@@ -1,53 +1,62 @@
 # Mouse2VR WebView UI Development
 
-This directory contains the extracted HTML, CSS, and JavaScript files for the Mouse2VR WebView interface.
+This directory contains the HTML, CSS, and JavaScript files for the Mouse2VR WebView interface.
 
 ## Files
 
-- `index.html` - Complete HTML file as embedded in the C++ binary
+- `index.html` - Main HTML file with inline styles and scripts
 - `index_dev.html` - Development version with external CSS/JS references
-- `styles.css` - All CSS styles extracted from the HTML
-- `app.js` - All JavaScript code extracted from the HTML
+- `styles.css` - All CSS styles (used in development)
+- `app.js` - All JavaScript code (used in development)
+
+## New External Resource Architecture
+
+The application now loads UI files directly from the filesystem instead of embedding them as string literals. This eliminates the MSVC C2026 string literal size limit and enables live UI editing during development.
+
+### How It Works
+
+1. **Production Mode** (default):
+   - UI files are copied to `resources/ui/` folder during build
+   - WebView2 loads from `file:///path/to/executable/resources/ui/index.html`
+   - Files are deployed alongside the executable
+
+2. **Development Mode** (when `#define DEV_UI` is enabled in WebViewWindow.cpp):
+   - UI files are loaded directly from `src/webview/ui/`
+   - Changes to HTML/CSS/JS are reflected immediately on refresh
+   - No rebuild required for UI changes
+
+### File Deployment Structure
+```
+Mouse2VR_WebView.exe
+└── resources/
+    └── ui/
+        ├── index.html
+        ├── styles.css
+        └── app.js
+```
 
 ## Development Workflow
 
-### 1. Initial Setup (already done)
-```bash
-# Extract HTML from the C++ file
-python scripts/extract_html.py
+### 1. Enable Development Mode
+Edit `src/webview/WebViewWindow.cpp` and uncomment:
+```cpp
+#define DEV_UI  // Uncomment for development
 ```
 
-### 2. Development Process
+### 2. Edit UI Files
+- Edit `index.html` for complete UI with inline styles/scripts
+- OR edit `index_dev.html`, `styles.css`, and `app.js` separately
 
-#### Option A: Edit the complete file
-Edit `index.html` directly with all inline styles and scripts.
+### 3. Test Changes
+- With DEV_UI enabled, just restart the application
+- Changes are loaded from source files directly
+- Use browser DevTools (F12) in WebView2 for debugging
 
-#### Option B: Edit separate files (recommended)
-1. Edit `styles.css` for styling changes
-2. Edit `app.js` for JavaScript functionality
-3. Edit `index_dev.html` for HTML structure changes
-4. Test locally by opening `index_dev.html` in a browser
-
-### 3. Build for C++
-After making changes, run:
-```bash
-# Windows
-scripts\update_html.bat
-
-# Or directly with Python
-python scripts/inline_html.py
-```
-
-This generates/updates `WebViewWindow_HTML.h` with your changes.
-
-### 4. How the HTML System Works
-**IMPORTANT**: The application **always** uses the external HTML from `WebViewWindow_HTML.h`. 
-- There is **no embedded HTML** in WebViewWindow.cpp anymore
-- The `#define USE_EXTERNAL_HTML` is always enabled
-- All UI changes must be made in the `src/webview/ui/` files
-
-### 5. Rebuild the project
-After updating the header file, push to GitHub and let Actions build, or build locally.
+### 4. Production Build
+1. Comment out `#define DEV_UI` in WebViewWindow.cpp
+2. Ensure `index.html` has all styles and scripts inline
+3. Build the project - CMake will copy files to resources folder
+4. Test that the executable works with the bundled resources
 
 ## Testing Changes Locally
 

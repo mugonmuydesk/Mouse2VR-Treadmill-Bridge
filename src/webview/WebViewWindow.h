@@ -42,5 +42,6 @@ private:
     void RegisterEventHandlers();
     void InjectInitialScript();
     void SetupJavaScriptBridge();
-    std::wstring GetEmbeddedHTML();
+    void LoadUIFromFiles();
+    std::wstring GetFallbackHTML();
 };

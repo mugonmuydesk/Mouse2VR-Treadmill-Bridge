@@ -9,8 +9,10 @@ import sys
 from pathlib import Path
 import textwrap
 
-# MSVC has a string literal size limit of about 65535 characters
-MAX_STRING_SIZE = 60000
+# MSVC has a string literal size limit of 16380 BYTES (C2026 error)
+# We use 15000 bytes to leave some margin for safety
+# This properly counts UTF-8 bytes, not characters
+MAX_STRING_SIZE = 15000  # in bytes
 
 def read_html_file(html_path):
     """Read the HTML file and return its content."""
@@ -28,7 +30,8 @@ def split_into_chunks(content, max_size=MAX_STRING_SIZE):
     
     for line in lines:
         line_with_newline = line + '\n'
-        line_size = len(line_with_newline)
+        # Count actual BYTES, not characters!
+        line_size = len(line_with_newline.encode('utf-8'))
         
         if current_size + line_size > max_size and current_chunk:
             # Save current chunk

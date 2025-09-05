@@ -155,6 +155,22 @@ if(BUILD_WEBVIEW)
         COMMENT "Preparing WebView2 Fixed Runtime deployment structure"
     )
     
+    # Copy UI resources to output directory
+    add_custom_command(TARGET Mouse2VR_WebView POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E echo "Copying UI resources..."
+        COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:Mouse2VR_WebView>/resources/ui
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/webview/ui/index.html
+            $<TARGET_FILE_DIR:Mouse2VR_WebView>/resources/ui/index.html
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/webview/ui/styles.css
+            $<TARGET_FILE_DIR:Mouse2VR_WebView>/resources/ui/styles.css
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            ${CMAKE_CURRENT_SOURCE_DIR}/src/webview/ui/app.js
+            $<TARGET_FILE_DIR:Mouse2VR_WebView>/resources/ui/app.js
+        COMMENT "Deploying UI resources to resources/ui/"
+    )
+    
     # Copy ViGEmClient DLL to output directory
     add_custom_command(TARGET Mouse2VR_WebView POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

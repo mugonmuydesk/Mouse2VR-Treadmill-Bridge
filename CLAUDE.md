@@ -1,21 +1,37 @@
 # Claude Code Development Notes
 
-## Current Version: v2.11.0-config-sync
+## Current Version: v2.13.0-external-ui
 
-### Recent Updates
+### Recent Updates (Sept 5, 2025)
+- **External UI Resources**: Switched from embedded HTML to external file loading
+- **No More String Limits**: Eliminated MSVC C2026 error (16KB limit)
+- **Development Mode**: Added DEV_UI mode for live UI editing
+- **File URL Loading**: WebView2 now loads from file:/// URLs
+- **Resource Deployment**: UI files copied to resources/ui/ during build
+
+### Previous Updates
 - **Config-UI Synchronization**: Config file is now single source of truth
 - **Rate Separation**: Independent backend target rate and UI refresh rate controls
-- **HTML/JS Extraction**: Separated HTML/CSS/JS to external files for easier development
 - **Direct Rate Control**: Removed hidden rate mappings (25→36, 45→70, 60→94 Hz)
 - **Startup Sync**: UI now requests config on startup for proper initialization
 
 ### Key Architecture Changes
 
-#### HTML/JS Development Workflow  
-- **Single source of truth**: All UI code in `src/webview/ui/`
-- **No embedded HTML**: WebViewWindow.cpp always uses WebViewWindow_HTML.h
-- **Build-time generation**: Run `scripts/inline_html.py` to update header from source files
-- **MSVC string limit handling**: Automatic chunking for large HTML strings
+#### NEW: External UI Resource System
+- **Production**: UI files deployed to `resources/ui/` folder alongside executable
+- **Development**: Enable `#define DEV_UI` to load from source `src/webview/ui/`
+- **No embedding**: Removed WebViewWindow_HTML.h dependency entirely
+- **Live editing**: Changes to UI files reflected without rebuild (DEV_UI mode)
+
+#### File Structure
+```
+Mouse2VR_WebView.exe
+└── resources/
+    └── ui/
+        ├── index.html (main UI with inline CSS/JS)
+        ├── styles.css (for development)
+        └── app.js (for development)
+```
 
 #### Config Synchronization Flow
 1. Backend loads config on startup

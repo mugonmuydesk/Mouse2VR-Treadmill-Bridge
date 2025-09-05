@@ -2,16 +2,15 @@
 #include "Bridge.h"
 #include "core/Mouse2VRCore.h"
 #include "common/Logger.h"
+#include "core/PathUtils.h"
 #include <sstream>
 #include <filesystem>
 #include <Shlwapi.h>
 
-// Optional: Include generated HTML header if it exists
-// Uncomment the following line after running scripts/inline_html.py
-#define USE_EXTERNAL_HTML  // Always use external HTML from header file
-#ifdef USE_EXTERNAL_HTML
-#include "WebViewWindow_HTML.h"
-#endif
+// Development mode: Load UI directly from source files
+// Production mode: Load UI from resources folder
+// Uncomment the following line for development
+// #define DEV_UI
 
 using namespace Microsoft::WRL;
 
@@ -154,8 +153,8 @@ HRESULT WebViewWindow::OnCreateWebViewControllerCompleted(HRESULT result, ICoreW
     // Setup JavaScript bridge
     SetupJavaScriptBridge();
     
-    // Load the embedded HTML
-    NavigateToString(GetEmbeddedHTML());
+    // Load UI from external files
+    LoadUIFromFiles();
     
     // Force window title (in case WebView2 changes it)
     SetWindowTextW(m_parentWindow, L"Mouse2VR Treadmill Bridge");
@@ -198,6 +197,55 @@ void WebViewWindow::NavigateToString(const std::wstring& htmlContent) {
     if (m_webView) {
         m_webView->NavigateToString(htmlContent.c_str());
     }
+}
+
+void WebViewWindow::LoadUIFromFiles() {
+    std::wstring htmlPath;
+    
+#ifdef DEV_UI
+    // Development mode: Load from source directory
+    // Get the project root directory (assumes standard build structure)
+    wchar_t currentDir[MAX_PATH];
+    GetCurrentDirectoryW(MAX_PATH, currentDir);
+    
+    // Try to find src/webview/ui relative to current directory
+    std::filesystem::path devPath = std::filesystem::path(currentDir);
+    
+    // Go up directories until we find src/webview/ui
+    for (int i = 0; i < 5; i++) {
+        std::filesystem::path uiPath = devPath / L"src" / L"webview" / L"ui" / L"index.html";
+        if (std::filesystem::exists(uiPath)) {
+            htmlPath = Mouse2VR::PathUtils::PathToFileURL(uiPath.wstring());
+            LOG_INFO("WebView", "DEV_UI: Loading from source: " + std::string(htmlPath.begin(), htmlPath.end()));
+            break;
+        }
+        devPath = devPath.parent_path();
+    }
+    
+    if (htmlPath.empty()) {
+        LOG_ERROR("WebView", "DEV_UI: Could not find src/webview/ui/index.html");
+        // Fall back to production mode
+    }
+#endif
+    
+    if (htmlPath.empty()) {
+        // Production mode: Load from resources folder relative to executable
+        std::wstring indexPath = Mouse2VR::PathUtils::GetExecutablePathW(L"resources\\ui\\index.html");
+        
+        // Check if the file exists
+        if (!std::filesystem::exists(indexPath)) {
+            LOG_ERROR("WebView", "UI file not found: " + std::string(indexPath.begin(), indexPath.end()));
+            // Fallback: try to load from a fallback embedded HTML if needed
+            NavigateToString(GetFallbackHTML());
+            return;
+        }
+        
+        htmlPath = Mouse2VR::PathUtils::PathToFileURL(indexPath);
+        LOG_INFO("WebView", "Loading UI from: " + std::string(htmlPath.begin(), htmlPath.end()));
+    }
+    
+    // Navigate to the file URL
+    NavigateToFile(htmlPath);
 }
 
 void WebViewWindow::RegisterEventHandlers() {
@@ -369,13 +417,42 @@ void WebViewWindow::SetupJavaScriptBridge() {
     // For now, we use simple message passing
 }
 
-std::wstring WebViewWindow::GetEmbeddedHTML() {
-    // HTML is maintained in src/webview/ui/ and compiled into WebViewWindow_HTML.h
-    // To modify the UI:
-    // 1. Edit files in src/webview/ui/ (index.html, app.js, styles.css)
-    // 2. Run scripts/inline_html.py to regenerate WebViewWindow_HTML.h
-    // 3. Rebuild the project
-    return Mouse2VR::WebView::GetEmbeddedHTML();
+std::wstring WebViewWindow::GetFallbackHTML() {
+    // Minimal fallback HTML if external resources are not found
+    return LR"HTML(
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mouse2VR - Error</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: #1e1e1e;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .error {
+            text-align: center;
+            padding: 2rem;
+        }
+        h1 { color: #f44336; }
+        p { color: #888; }
+    </style>
+</head>
+<body>
+    <div class="error">
+        <h1>UI Resources Not Found</h1>
+        <p>Could not load the user interface files.</p>
+        <p>Please ensure the 'resources/ui' folder exists in the application directory.</p>
+        <p>Path checked: resources\ui\index.html</p>
+    </div>
+</body>
+</html>
+)HTML";
 }
 
 } // namespace Mouse2VR

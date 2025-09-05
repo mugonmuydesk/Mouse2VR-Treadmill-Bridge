@@ -55,3 +55,4 @@ jobs:
           build/bin/${{ matrix.config }}/Mouse2VR.exe
           build/bin/${{ matrix.config }}/Mouse2VR_WebView.exe
           build/bin/${{ matrix.config }}/*.dll
+          build/bin/${{ matrix.config }}/resources/ui/*

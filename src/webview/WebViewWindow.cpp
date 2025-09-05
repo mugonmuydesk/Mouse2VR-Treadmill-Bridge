@@ -454,5 +454,3 @@ std::wstring WebViewWindow::GetFallbackHTML() {
 </html>
 )HTML";
 }
-
-} // namespace Mouse2VR

@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <thread>
 #include <vector>
+#include <chrono>
 
 using namespace Mouse2VR;
 
@@ -87,12 +88,21 @@ TEST_F(ConfigManagerTest, SaveAndLoadConfig) {
 }
 
 TEST_F(ConfigManagerTest, LoadNonExistentFileReturnsFalse) {
-    auto config = std::make_unique<ConfigManager>("non_existent_file.json");
+    // Use a unique filename that definitely won't exist
+    std::string nonExistentPath = "test_non_existent_" + std::to_string(std::chrono::system_clock::now().time_since_epoch().count()) + ".json";
+    
+    // Make sure the file doesn't exist
+    std::filesystem::remove(nonExistentPath);
+    
+    auto config = std::make_unique<ConfigManager>(nonExistentPath);
     EXPECT_FALSE(config->Load());
     
     // Should still have default values
     AppConfig defaults = config->GetConfig();
     EXPECT_EQ(defaults.sensitivity, 1.0f);
+    
+    // Clean up in case anything was created
+    std::filesystem::remove(nonExistentPath);
 }
 
 TEST_F(ConfigManagerTest, CreateDefaultConfig) {

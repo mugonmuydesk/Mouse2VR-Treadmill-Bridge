@@ -1,6 +1,7 @@
 # Build directories
 build/
 build_local/
+build_test/
 out/
 cmake-build-*/
 
